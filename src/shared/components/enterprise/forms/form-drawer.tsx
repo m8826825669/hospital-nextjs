@@ -10,6 +10,7 @@ interface FormDrawerProps {
   title: string;
   description?: string;
   children: ReactNode;
+  size?: "sm" | "md" | "lg" | "xl";
   onOpenChange: (open: boolean) => void;
 }
 
@@ -18,6 +19,7 @@ export function FormDrawer({
   title,
   description,
   children,
+  size = "lg",
   onOpenChange,
 }: FormDrawerProps) {
   return (
@@ -25,6 +27,7 @@ export function FormDrawer({
       open={open}
       title={title}
       description={description}
+      size={size}
       onOpenChange={onOpenChange}
     >
       {children}
