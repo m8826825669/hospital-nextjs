@@ -3,8 +3,7 @@
 import { CalendarDays, Droplets, ShieldCheck, Stethoscope } from "lucide-react";
 import { StatCard, SectionCard } from "@/shared/components/enterprise";
 import type { Patient } from "../types/patient.types";
-import { PatientInfoGrid } from "./patient-info-grid";
-
+import { EntityInfoGrid } from "@/shared/components/enterprise";
 export function PatientOverviewTab({ patient }: { patient: Patient }) {
   return (
     <div className="space-y-4">
@@ -39,7 +38,7 @@ export function PatientOverviewTab({ patient }: { patient: Patient }) {
       </div>
 
       <SectionCard title="Clinical Summary">
-        <PatientInfoGrid
+        <EntityInfoGrid
           items={[
             { label: "UHID", value: patient.uhid },
             { label: "MRN", value: patient.mrn },

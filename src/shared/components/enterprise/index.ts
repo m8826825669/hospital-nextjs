@@ -14,3 +14,4 @@ export * from "./section-card";
 
 export * from "./datatable";
 export * from "./forms";
+export * from "./workspace";

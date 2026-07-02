@@ -2,8 +2,7 @@
 
 import { SectionCard, StatusBadge } from "@/shared/components/enterprise";
 import type { Patient } from "../types/patient.types";
-import { PatientInfoGrid } from "./patient-info-grid";
-
+import { EntityInfoGrid } from "@/shared/components/enterprise";
 export function PatientInsuranceTab({ patient }: { patient: Patient }) {
   const hasInsurance = Boolean(patient.insurance_provider_name);
 
@@ -16,7 +15,7 @@ export function PatientInsuranceTab({ patient }: { patient: Patient }) {
         />
       </div>
 
-      <PatientInfoGrid
+      <EntityInfoGrid
         items={[
           { label: "Provider", value: patient.insurance_provider_name },
           { label: "Provider ID", value: patient.insurance_provider_id },

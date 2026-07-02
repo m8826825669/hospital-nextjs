@@ -69,6 +69,7 @@ export function DataTable<TData, TValue>({
 
   const activeSorting = sorting ?? internalSorting;
 
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data,
     columns,

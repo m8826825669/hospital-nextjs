@@ -1,67 +1,71 @@
-// src/app/dashboard/page.tsx
+"use client";
 
-import { AppShell } from "@/shared/components/layout/app-shell";
 import {
+  ErrorState,
+  LoadingState,
   PageHeader,
-  StatCard,
-  SectionCard,
-  EmptyState,
 } from "@/shared/components/enterprise";
+import { AppShell } from "@/shared/components/layout/app-shell";
+
 import {
-  Users,
-  CalendarDays,
-  Stethoscope,
-  IndianRupee,
-} from "lucide-react";
+  useAppointmentTrend,
+  useDashboardActivity,
+  useDashboardKpis,
+  useRevenueTrend,
+} from "@/features/dashboard/api/dashboard.queries";
+import { ExecutiveKpis } from "@/features/dashboard/components/executive-kpis";
+import { QuickActionsCard } from "@/features/dashboard/components/quick-actions-card";
+import { RecentActivityCard } from "@/features/dashboard/components/recent-activity-card";
+import { SimpleTrendCard } from "@/features/dashboard/components/simple-trend-card";
 
 export default function DashboardPage() {
+  const kpisQuery = useDashboardKpis();
+  const revenueTrendQuery = useRevenueTrend();
+  const appointmentTrendQuery = useAppointmentTrend();
+  const activityQuery = useDashboardActivity();
+
   return (
     <AppShell>
       <div className="space-y-6">
         <PageHeader
-          title="Enterprise Dashboard"
-          description="Overview of hospital operations, activity, and performance."
+          title="Executive Dashboard"
+          description="Hospital-wide operational overview, revenue, patient flow, and critical work queues."
         />
+        
+        {kpisQuery.isError ? (
+          <ErrorState
+            title="Could not load dashboard"
+            description="Please check your connection or try again."
+            onRetry={() => kpisQuery.refetch()}
+          />
+        ) : kpisQuery.isLoading ? (
+          <LoadingState />
+        ) : kpisQuery.data ? (
+          <ExecutiveKpis kpis={kpisQuery.data} />
+        ) : null}
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          <StatCard
-            title="Patients"
-            value="0"
-            description="Registered patients"
-            icon={<Users className="h-5 w-5" />}
+        <div className="grid gap-6 xl:grid-cols-2">
+          <SimpleTrendCard
+            title="Revenue Trend"
+            description="Billing and pharmacy revenue trend."
+            data={revenueTrendQuery.data ?? []}
           />
 
-          <StatCard
-            title="Appointments"
-            value="0"
-            description="Today’s appointments"
-            icon={<CalendarDays className="h-5 w-5" />}
-          />
-
-          <StatCard
-            title="Doctors"
-            value="0"
-            description="Active consultants"
-            icon={<Stethoscope className="h-5 w-5" />}
-          />
-
-          <StatCard
-            title="Revenue"
-            value="₹0"
-            description="Today’s billing"
-            icon={<IndianRupee className="h-5 w-5" />}
+          <SimpleTrendCard
+            title="Appointment Trend"
+            description="Appointment volume trend."
+            data={appointmentTrendQuery.data ?? []}
           />
         </div>
 
-        <SectionCard
-          title="Recent Activity"
-          description="Latest actions from the HMS workspace."
-        >
-          <EmptyState
-            title="No recent activity"
-            description="Activity logs will appear here once users begin working."
+        <div className="grid gap-6 xl:grid-cols-2">
+          <QuickActionsCard />
+
+          <RecentActivityCard
+            activities={activityQuery.data}
+            isLoading={activityQuery.isLoading}
           />
-        </SectionCard>
+        </div>
       </div>
     </AppShell>
   );

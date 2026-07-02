@@ -217,31 +217,6 @@ export default function PatientsPage() {
     getRowId={(row) => row.id}
   />
 )}
-        <DataTable
-          columns={columns}
-          data={patients}
-          isLoading={patientsQuery.isLoading}
-          search={search}
-          onSearchChange={(value) => {
-            setSearch(value);
-            setPageIndex(0);
-          }}
-          searchPlaceholder="Search patients by name, UHID, MRN, phone..."
-          enableRowSelection
-          pagination={{
-            pageIndex,
-            pageSize,
-            total,
-            pageCount,
-          }}
-          onPaginationChange={(pagination) => {
-            setPageIndex(pagination.pageIndex);
-            setPageSize(pagination.pageSize);
-          }}
-          emptyTitle="No patients found"
-          emptyDescription="Try adjusting your search or register a new patient."
-          getRowId={(row) => row.id}
-        />
 
         <PatientProfileDrawer
           open={profileOpen}

@@ -2,15 +2,14 @@
 
 import { SectionCard } from "@/shared/components/enterprise";
 import type { Patient } from "../types/patient.types";
-import { PatientInfoGrid } from "./patient-info-grid";
-
+import { EntityInfoGrid } from "@/shared/components/enterprise";
 export function PatientDemographicsTab({ patient }: { patient: Patient }) {
   return (
     <SectionCard
       title="Demographics"
       description="Personal, demographic, and identity information."
     >
-      <PatientInfoGrid
+      <EntityInfoGrid
         items={[
           { label: "Title", value: patient.title },
           { label: "First Name", value: patient.first_name },
