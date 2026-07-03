@@ -1,117 +1,83 @@
-// src/features/nursing/api/nursing.service.ts
-
 import { apiClient } from "@/platform/api/api-client";
-import type { ApiListResponse } from "@/platform/api/api.types";
+
 import type {
+  CarePlan,
   MedicationAdministration,
+  NursingDashboard,
   NursingListParams,
   NursingNote,
-  NursingPatient,
   NursingTask,
-  NursingTaskStatus,
-  VitalRecord,
+  PageResponse,
+  VitalSign,
 } from "../types/nursing.types";
 import type {
+  CarePlanFormValues,
+  MedicationAdministrationFormValues,
   NursingNoteFormValues,
   NursingTaskFormValues,
-  VitalFormValues,
+  VitalSignFormValues,
 } from "../schemas/nursing.schema";
 
+function withPageSize(params: NursingListParams) {
+  return { ...params, page_size: params.page_size ?? params.size };
+}
+
 export const nursingService = {
-  async listPatients(
-    params: NursingListParams
-  ): Promise<ApiListResponse<NursingPatient>> {
-    const response = await apiClient.get<ApiListResponse<NursingPatient>>(
-      "/nursing/patients",
-      { params }
-    );
-    return response.data;
+  dashboard: async () => {
+    const { data } = await apiClient.get<NursingDashboard>("/nursing/dashboard");
+    return data;
   },
 
-  async listVitals(
-    params: NursingListParams
-  ): Promise<ApiListResponse<VitalRecord>> {
-    const response = await apiClient.get<ApiListResponse<VitalRecord>>(
-      "/nursing/vitals",
-      { params }
-    );
-    return response.data;
+  listVitals: async (params: NursingListParams) => {
+    const { data } = await apiClient.get<PageResponse<VitalSign>>("/nursing/vitals", { params: withPageSize(params) });
+    return data;
+  },
+  createVital: async (payload: VitalSignFormValues) => {
+    const { data } = await apiClient.post<VitalSign>("/nursing/vitals", payload);
+    return data;
   },
 
-  async createVital(payload: VitalFormValues): Promise<VitalRecord> {
-    const response = await apiClient.post<VitalRecord>(
-      "/nursing/vitals",
-      payload
-    );
-    return response.data;
+  listNotes: async (params: NursingListParams) => {
+    const { data } = await apiClient.get<PageResponse<NursingNote>>("/nursing/notes", { params: withPageSize(params) });
+    return data;
+  },
+  createNote: async (payload: NursingNoteFormValues) => {
+    const { data } = await apiClient.post<NursingNote>("/nursing/notes", payload);
+    return data;
   },
 
-  async listMedications(
-    params: NursingListParams
-  ): Promise<ApiListResponse<MedicationAdministration>> {
-    const response =
-      await apiClient.get<ApiListResponse<MedicationAdministration>>(
-        "/nursing/medications",
-        { params }
-      );
-    return response.data;
+  listCarePlans: async (params: NursingListParams) => {
+    const { data } = await apiClient.get<PageResponse<CarePlan>>("/nursing/care-plans", { params: withPageSize(params) });
+    return data;
+  },
+  createCarePlan: async (payload: CarePlanFormValues) => {
+    const { data } = await apiClient.post<CarePlan>("/nursing/care-plans", payload);
+    return data;
   },
 
-  async updateMedicationStatus(
-    id: string,
-    status: MedicationAdministration["status"]
-  ): Promise<MedicationAdministration> {
-    const response = await apiClient.patch<MedicationAdministration>(
-      `/nursing/medications/${id}/status`,
-      { status }
-    );
-    return response.data;
+  listTasks: async (params: NursingListParams) => {
+    const { data } = await apiClient.get<PageResponse<NursingTask>>("/nursing/tasks", { params: withPageSize(params) });
+    return data;
+  },
+  createTask: async (payload: NursingTaskFormValues) => {
+    const { data } = await apiClient.post<NursingTask>("/nursing/tasks", payload);
+    return data;
+  },
+  updateTaskStatus: async (id: string, status: string) => {
+    const { data } = await apiClient.patch<NursingTask>(`/nursing/tasks/${id}/status`, { status });
+    return data;
   },
 
-  async listNotes(
-    params: NursingListParams
-  ): Promise<ApiListResponse<NursingNote>> {
-    const response = await apiClient.get<ApiListResponse<NursingNote>>(
-      "/nursing/notes",
-      { params }
-    );
-    return response.data;
+  listMedications: async (params: NursingListParams) => {
+    const { data } = await apiClient.get<PageResponse<MedicationAdministration>>("/nursing/medication-administrations", { params: withPageSize(params) });
+    return data;
   },
-
-  async createNote(payload: NursingNoteFormValues): Promise<NursingNote> {
-    const response = await apiClient.post<NursingNote>(
-      "/nursing/notes",
-      payload
-    );
-    return response.data;
+  createMedication: async (payload: MedicationAdministrationFormValues) => {
+    const { data } = await apiClient.post<MedicationAdministration>("/nursing/medication-administrations", payload);
+    return data;
   },
-
-  async listTasks(
-    params: NursingListParams
-  ): Promise<ApiListResponse<NursingTask>> {
-    const response = await apiClient.get<ApiListResponse<NursingTask>>(
-      "/nursing/tasks",
-      { params }
-    );
-    return response.data;
-  },
-
-  async createTask(payload: NursingTaskFormValues): Promise<NursingTask> {
-    const response = await apiClient.post<NursingTask>(
-      "/nursing/tasks",
-      payload
-    );
-    return response.data;
-  },
-
-  async updateTaskStatus(
-    id: string,
-    status: NursingTaskStatus
-  ): Promise<NursingTask> {
-    const response = await apiClient.patch<NursingTask>(
-      `/nursing/tasks/${id}/status`,
-      { status }
-    );
-    return response.data;
+  updateMedicationStatus: async (id: string, status: string) => {
+    const { data } = await apiClient.patch<MedicationAdministration>(`/nursing/medication-administrations/${id}/status`, { status });
+    return data;
   },
 };

@@ -81,6 +81,12 @@ export const navigationItems = [
     permission: "patient.view",
   },
   {
+    title: "Nursing",
+    href: "/nursing",
+    icon: Bed, // Replace with the actual icon for Nursing
+    permission: "nursing.view",
+  },
+  {
     title: "Appointments",
     href: "/appointments",
     icon: CalendarDays,

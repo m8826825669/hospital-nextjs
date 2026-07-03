@@ -11,15 +11,15 @@ import {
   TextField,
 } from "@/shared/components/enterprise";
 import {
-  vitalFormSchema,
-  type VitalFormInput,
-  type VitalFormValues,
+  vitalSignFormSchema,
+  type VitalSignFormInput,
+  type VitalSignFormValues,
 } from "../schemas/nursing.schema";
 
 interface VitalFormProps {
   admissionId?: string;
   isSubmitting?: boolean;
-  onSubmit: (values: VitalFormValues) => void | Promise<void>;
+  onSubmit: (values: VitalSignFormValues) => void | Promise<void>;
   onCancel?: () => void;
 }
 
@@ -31,17 +31,19 @@ export function VitalForm({
 }: VitalFormProps) {
   const now = new Date().toISOString().slice(0, 16);
 
-  const form = useForm<VitalFormInput>({
-    resolver: zodResolver(vitalFormSchema),
+  const form = useForm<VitalSignFormInput>({
+    resolver: zodResolver(vitalSignFormSchema),
     defaultValues: {
-      admission_id: admissionId ?? "",
+      patient_id: admissionId ?? "",
       recorded_at: now,
       temperature: undefined,
       pulse: undefined,
       respiratory_rate: undefined,
-      blood_pressure: "",
+      systolic_bp: undefined,
+      diastolic_bp: undefined,
       spo2: undefined,
       pain_score: undefined,
+      consciousness_level: "",
       notes: "",
     },
   });
@@ -50,11 +52,11 @@ export function VitalForm({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit((values) =>
-          onSubmit(vitalFormSchema.parse(values))
+          onSubmit(vitalSignFormSchema.parse(values))
         )}
         className="space-y-5"
       >
-        <TextField form={form} name="admission_id" label="Admission ID" />
+        <TextField form={form} name="patient_id" label="Patient ID" />
 
         <TextField
           form={form}
@@ -75,9 +77,14 @@ export function VitalForm({
         </div>
 
         <div className="grid gap-4 md:grid-cols-3">
-          <TextField form={form} name="blood_pressure" label="Blood Pressure" />
+          <TextField form={form} name="systolic_bp" label="Systolic BP" type="number" />
+          <TextField form={form} name="diastolic_bp" label="Diastolic BP" type="number" />
           <TextField form={form} name="spo2" label="SpO2" type="number" />
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
           <TextField form={form} name="pain_score" label="Pain Score" type="number" />
+          <TextField form={form} name="consciousness_level" label="Consciousness Level" />
         </div>
 
         <TextareaField form={form} name="notes" label="Notes" />
