@@ -8,6 +8,7 @@ interface SectionCardProps {
   description?: string;
   actions?: ReactNode;
   children: ReactNode;
+  className?: string;
 }
 
 export function SectionCard({
@@ -15,9 +16,10 @@ export function SectionCard({
   description,
   actions,
   children,
+  className,
 }: SectionCardProps) {
   return (
-    <Card>
+    <Card className={className}>
       {(title || description || actions) && (
         <CardHeader className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>

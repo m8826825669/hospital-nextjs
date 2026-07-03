@@ -55,6 +55,12 @@ export const navigationItems = [
     icon: Receipt, 
     permission: "finance.view" 
   },
+  {
+    title: "Radiology", 
+    href: "/radiology", 
+    icon: Microscope, 
+    permission: "radiology.view" 
+  },
 
   {
     title: "Dashboard",

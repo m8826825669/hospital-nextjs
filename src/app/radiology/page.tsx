@@ -3,353 +3,323 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Clock, Plus, ScanLine } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { Button } from "@/components/ui/button";
-import {
-  ActionMenu,
-  ConfirmDialog,
-  DataTable,
-  FormDrawer,
-  PageHeader,
-} from "@/shared/components/enterprise";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DataTable, FormDrawer, PageHeader, SectionCard } from "@/shared/components/enterprise";
 import { AppShell } from "@/shared/components/layout/app-shell";
-
 import {
-  RadiologyModalityBadge,
-  RadiologyStatusBadge,
+  useCreateRadiologyOrder,
+  useCreateRadiologyReport,
+  useCreateRadiologyTest,
+  useRadiologyDashboard,
+  useRadiologyDoctorOptions,
+  useRadiologyOrders,
+  useRadiologyPatientOptions,
+  useRadiologyReports,
+  useRadiologyTests,
+  useUpdateRadiologyOrderStatus,
+} from "@/features/radiology/api/radiology.queries";
+import {
+  ModalityBadge,
+  PriorityBadge,
+  RadiologyOrderStatusBadge,
+  RadiologyReportStatusBadge,
 } from "@/features/radiology/components/radiology-badges";
 import { RadiologyOrderForm } from "@/features/radiology/components/radiology-order-form";
 import { RadiologyReportForm } from "@/features/radiology/components/radiology-report-form";
-import { RadiologyWorkspaceDrawer } from "@/features/radiology/components/radiology-workspace-drawer";
-
+import { RadiologyTestForm } from "@/features/radiology/components/radiology-test-form";
 import {
-  useCreateRadiologyOrder,
-  useDeleteRadiologyOrder,
-  useRadiologyOrders,
-  useSaveRadiologyReport,
-  useUpdateRadiologyOrder,
-  useUpdateRadiologyStatus,
-} from "@/features/radiology/api/radiology.queries";
-
+  modalityOptions,
+  radiologyOrderStatusOptions,
+  radiologyPriorityOptions,
+  radiologyReportStatusOptions,
+} from "@/features/radiology/constants/radiology.constants";
 import type {
   RadiologyModality,
   RadiologyOrder,
   RadiologyOrderStatus,
+  RadiologyPriority,
+  RadiologyReport,
+  RadiologyReportStatus,
+  RadiologyTest,
 } from "@/features/radiology/types/radiology.types";
 import type {
   RadiologyOrderFormValues,
   RadiologyReportFormValues,
+  RadiologyTestFormValues,
 } from "@/features/radiology/schemas/radiology.schema";
 
-function orderToFormValues(
-  order: RadiologyOrder
-): Partial<RadiologyOrderFormValues> {
-  return {
-    patient_id: order.patient_id,
-    doctor_id: order.doctor_id ?? "",
-    modality: order.modality,
-    study_name: order.study_name,
-    body_part: order.body_part ?? "",
-    order_date: order.order_date,
-    scheduled_date: order.scheduled_date ?? "",
-    scheduled_time: order.scheduled_time ?? "",
-    priority: order.priority,
-    clinical_notes: order.clinical_notes ?? "",
-  };
+type KpiCardProps = {
+  label: string;
+  value: number;
+  description: string;
+  tone?: "default" | "warning" | "success" | "danger";
+};
+
+function KpiCard({ label, value, description, tone = "default" }: KpiCardProps) {
+  const icon = tone === "success" ? CheckCircle2 : tone === "warning" || tone === "danger" ? AlertTriangle : Clock;
+  const Icon = icon;
+
+  return (
+    <SectionCard className="p-4">
+      <div className="flex items-center justify-between gap-3">
+        <div>
+          <p className="text-sm text-muted-foreground">{label}</p>
+          <p className="mt-1 text-2xl font-semibold">{value}</p>
+          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
+        </div>
+        <div className="rounded-full bg-muted p-3">
+          <Icon className="h-5 w-5 text-muted-foreground" />
+        </div>
+      </div>
+    </SectionCard>
+  );
 }
 
-function reportToFormValues(
-  order: RadiologyOrder
-): Partial<RadiologyReportFormValues> {
-  return {
-    report_text: order.report_text ?? "",
-    impression: order.impression ?? "",
-    radiologist_id: order.radiologist_id ?? "",
-  };
+function nextWorkflowStatus(status: string): RadiologyOrderStatus | null {
+  const flow: RadiologyOrderStatus[] = [
+    "ordered",
+    "scheduled",
+    "patient_arrived",
+    "in_progress",
+    "images_uploaded",
+    "reporting",
+    "reported",
+    "verified",
+    "approved",
+    "completed",
+  ];
+  const index = flow.indexOf(status as RadiologyOrderStatus);
+  if (index < 0 || index === flow.length - 1) return null;
+  return flow[index + 1];
 }
 
 export default function RadiologyPage() {
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState("");
-  const [modality, setModality] = useState("");
+  const [statusFilter, setStatusFilter] = useState<RadiologyOrderStatus | "all">("all");
+  const [priorityFilter, setPriorityFilter] = useState<RadiologyPriority | "all">("all");
+  const [modalityFilter, setModalityFilter] = useState<RadiologyModality | "all">("all");
+  const [reportStatusFilter, setReportStatusFilter] = useState<RadiologyReportStatus | "all">("all");
 
-  const [orderFormOpen, setOrderFormOpen] = useState(false);
-  const [reportFormOpen, setReportFormOpen] = useState(false);
-  const [workspaceOpen, setWorkspaceOpen] = useState(false);
+  const [testDrawerOpen, setTestDrawerOpen] = useState(false);
+  const [orderDrawerOpen, setOrderDrawerOpen] = useState(false);
+  const [reportDrawerOpen, setReportDrawerOpen] = useState(false);
 
-  const [selectedOrder, setSelectedOrder] = useState<RadiologyOrder | null>(null);
-  const [deleteOrder, setDeleteOrder] = useState<RadiologyOrder | null>(null);
-
-  const params = useMemo(
+  const orderParams = useMemo(
     () => ({
       page: 1,
       size: 100,
       search: search || undefined,
-      status: status ? (status as RadiologyOrderStatus) : undefined,
-      modality: modality ? (modality as RadiologyModality) : undefined,
+      status: statusFilter === "all" ? undefined : statusFilter,
+      priority: priorityFilter === "all" ? undefined : priorityFilter,
+      modality: modalityFilter === "all" ? undefined : modalityFilter,
     }),
-    [search, status, modality]
+    [search, statusFilter, priorityFilter, modalityFilter]
   );
 
-  const ordersQuery = useRadiologyOrders(params);
-  const createOrder = useCreateRadiologyOrder();
-  const updateOrder = useUpdateRadiologyOrder();
-  const deleteOrderMutation = useDeleteRadiologyOrder();
-  const saveReport = useSaveRadiologyReport();
-  const updateStatus = useUpdateRadiologyStatus();
+  const testParams = useMemo(
+    () => ({
+      page: 1,
+      size: 100,
+      search: search || undefined,
+      modality: modalityFilter === "all" ? undefined : modalityFilter,
+    }),
+    [search, modalityFilter]
+  );
 
-  const columns: ColumnDef<RadiologyOrder>[] = [
+  const reportParams = useMemo(
+    () => ({
+      page: 1,
+      size: 100,
+      search: search || undefined,
+      status: reportStatusFilter === "all" ? undefined : reportStatusFilter,
+    }),
+    [search, reportStatusFilter]
+  );
+
+  const activeOrderParams = useMemo(() => ({ page: 1, size: 100 }), []);
+
+  const dashboardQuery = useRadiologyDashboard();
+  const testsQuery = useRadiologyTests(testParams);
+  const ordersQuery = useRadiologyOrders(orderParams);
+  const reportOrdersQuery = useRadiologyOrders(activeOrderParams);
+  const reportsQuery = useRadiologyReports(reportParams);
+  const patientOptionsQuery = useRadiologyPatientOptions();
+  const doctorOptionsQuery = useRadiologyDoctorOptions();
+
+  const createTest = useCreateRadiologyTest();
+  const createOrder = useCreateRadiologyOrder();
+  const createReport = useCreateRadiologyReport();
+  const updateOrderStatus = useUpdateRadiologyOrderStatus();
+
+  const testColumns: ColumnDef<RadiologyTest>[] = [
+    { accessorKey: "code", header: "Code" },
+    { accessorKey: "name", header: "Test" },
+    { accessorKey: "modality", header: "Modality", cell: ({ row }) => <ModalityBadge modality={row.original.modality} /> },
+    { accessorKey: "body_part", header: "Body Part" },
+    { accessorKey: "estimated_duration_minutes", header: "Duration", cell: ({ row }) => row.original.estimated_duration_minutes ? `${row.original.estimated_duration_minutes} min` : "-" },
+    { accessorKey: "contrast_required", header: "Contrast", cell: ({ row }) => (row.original.contrast_required ? "Yes" : "No") },
+    { accessorKey: "price", header: "Price", cell: ({ row }) => `₹${Number(row.original.price).toFixed(2)}` },
+    { accessorKey: "is_active", header: "Active", cell: ({ row }) => (row.original.is_active ? "Yes" : "No") },
+  ];
+
+  const orderColumns: ColumnDef<RadiologyOrder>[] = [
     { accessorKey: "order_number", header: "Order" },
-    {
-      accessorKey: "patient_name",
-      header: "Patient",
-      cell: ({ row }) => (
-        <div>
-          <p className="font-medium">{row.original.patient_name}</p>
-          <p className="text-xs text-muted-foreground">
-            {row.original.patient_uhid || "-"}
-          </p>
-        </div>
-      ),
-    },
-    { accessorKey: "study_name", header: "Study" },
-    {
-      accessorKey: "modality",
-      header: "Modality",
-      cell: ({ row }) => <RadiologyModalityBadge modality={row.original.modality} />,
-    },
-    { accessorKey: "order_date", header: "Order Date" },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => <RadiologyStatusBadge status={row.original.status} />,
-    },
+    { accessorKey: "patient_name", header: "Patient" },
+    { accessorKey: "test_name", header: "Test" },
+    { accessorKey: "modality", header: "Modality", cell: ({ row }) => <ModalityBadge modality={row.original.modality ?? "-"} /> },
+    { accessorKey: "scheduled_date", header: "Scheduled", cell: ({ row }) => row.original.scheduled_date ?? "-" },
+    { accessorKey: "priority", header: "Priority", cell: ({ row }) => <PriorityBadge priority={row.original.priority} /> },
+    { accessorKey: "status", header: "Status", cell: ({ row }) => <RadiologyOrderStatusBadge status={row.original.status} /> },
     {
       id: "actions",
-      cell: ({ row }) => (
-        <ActionMenu
-          items={[
-            {
-              label: "Open Workspace",
-              onClick: () => {
-                setSelectedOrder(row.original);
-                setWorkspaceOpen(true);
-              },
-            },
-            {
-              label: "Edit Order",
-              onClick: () => {
-                setSelectedOrder(row.original);
-                setOrderFormOpen(true);
-              },
-            },
-            {
-              label: "Start Study",
-              onClick: () =>
-                updateStatus.mutate({
-                  id: row.original.id,
-                  status: "in_progress",
-                }),
-            },
-            {
-              label: "Enter Report",
-              onClick: () => {
-                setSelectedOrder(row.original);
-                setReportFormOpen(true);
-              },
-            },
-            {
-              label: "Verify",
-              onClick: () =>
-                updateStatus.mutate({
-                  id: row.original.id,
-                  status: "verified",
-                }),
-            },
-            {
-              label: "Approve",
-              onClick: () =>
-                updateStatus.mutate({
-                  id: row.original.id,
-                  status: "approved",
-                }),
-            },
-            {
-              label: "Delete",
-              danger: true,
-              onClick: () => setDeleteOrder(row.original),
-            },
-          ]}
-        />
-      ),
+      cell: ({ row }) => {
+        const next = nextWorkflowStatus(row.original.status);
+        return (
+          <div className="flex justify-end gap-2">
+            {next && (
+              <Button size="sm" variant="outline" onClick={() => updateOrderStatus.mutate({ id: row.original.id, status: next })}>
+                Move to {next.replaceAll("_", " ")}
+              </Button>
+            )}
+          </div>
+        );
+      },
     },
   ];
 
-  async function handleOrderSubmit(values: RadiologyOrderFormValues) {
-    if (selectedOrder) {
-      await updateOrder.mutateAsync({ id: selectedOrder.id, payload: values });
-    } else {
-      await createOrder.mutateAsync(values);
-    }
+  const reportColumns: ColumnDef<RadiologyReport>[] = [
+    { accessorKey: "order_number", header: "Order" },
+    { accessorKey: "patient_name", header: "Patient" },
+    { accessorKey: "test_name", header: "Test" },
+    { accessorKey: "critical_finding", header: "Critical", cell: ({ row }) => (row.original.critical_finding ? "Yes" : "No") },
+    { accessorKey: "impression", header: "Impression" },
+    { accessorKey: "status", header: "Status", cell: ({ row }) => <RadiologyReportStatusBadge status={row.original.status} /> },
+  ];
 
-    setOrderFormOpen(false);
-    setSelectedOrder(null);
+  async function handleCreateTest(values: RadiologyTestFormValues) {
+    await createTest.mutateAsync(values);
+    setTestDrawerOpen(false);
   }
 
-  async function handleReportSubmit(values: RadiologyReportFormValues) {
-    if (!selectedOrder) return;
-
-    await saveReport.mutateAsync({
-      id: selectedOrder.id,
-      payload: values,
-    });
-
-    setReportFormOpen(false);
-    setSelectedOrder(null);
+  async function handleCreateOrder(values: RadiologyOrderFormValues) {
+    await createOrder.mutateAsync(values);
+    setOrderDrawerOpen(false);
   }
+
+  async function handleCreateReport(values: RadiologyReportFormValues) {
+    await createReport.mutateAsync(values);
+    setReportDrawerOpen(false);
+  }
+
+  const dashboard = dashboardQuery.data;
 
   return (
     <AppShell>
       <div className="space-y-6">
         <PageHeader
-          title="Radiology"
-          description="Manage radiology orders, imaging workflow, reporting, verification, approval, and PACS placeholders."
-          actions={
-            <Button
-              onClick={() => {
-                setSelectedOrder(null);
-                setOrderFormOpen(true);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              New Radiology Order
-            </Button>
-          }
+          title="Radiology Information System"
+          description="Manage imaging test catalogue, scheduling, scan workflow, structured reporting, verification, and approvals."
         />
 
-        <div className="grid gap-4 rounded-xl border bg-card p-4 md:grid-cols-3">
-          <input
-            className="h-10 rounded-md border bg-background px-3 text-sm"
-            placeholder="Search radiology orders..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-
-          <select
-            className="h-10 rounded-md border bg-background px-3 text-sm"
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
-          >
-            <option value="">All Status</option>
-            <option value="ordered">Ordered</option>
-            <option value="scheduled">Scheduled</option>
-            <option value="in_progress">In Progress</option>
-            <option value="reported">Reported</option>
-            <option value="verified">Verified</option>
-            <option value="approved">Approved</option>
-            <option value="cancelled">Cancelled</option>
-          </select>
-
-          <select
-            className="h-10 rounded-md border bg-background px-3 text-sm"
-            value={modality}
-            onChange={(event) => setModality(event.target.value)}
-          >
-            <option value="">All Modalities</option>
-            <option value="xray">X-Ray</option>
-            <option value="ct">CT</option>
-            <option value="mri">MRI</option>
-            <option value="ultrasound">Ultrasound</option>
-            <option value="doppler">Doppler</option>
-            <option value="fluoroscopy">Fluoroscopy</option>
-          </select>
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
+          <KpiCard label="Today" value={dashboard?.today_orders ?? 0} description="Orders today" />
+          <KpiCard label="Pending" value={dashboard?.pending_orders ?? 0} description="Awaiting scheduling" />
+          <KpiCard label="Scheduled" value={dashboard?.scheduled_orders ?? 0} description="Booked scans" />
+          <KpiCard label="In Progress" value={dashboard?.in_progress_orders ?? 0} description="Scanning" tone="warning" />
+          <KpiCard label="Critical" value={dashboard?.critical_reports ?? 0} description="Critical reports" tone="danger" />
+          <KpiCard label="Approved" value={dashboard?.approved_reports ?? 0} description="Final reports" tone="success" />
         </div>
 
-        <DataTable
-          columns={columns}
-          data={ordersQuery.data?.items ?? []}
-          isLoading={ordersQuery.isLoading}
-          search={search}
-          onSearchChange={setSearch}
-          emptyTitle="No radiology orders found"
-          emptyDescription="Create radiology orders for X-Ray, CT, MRI, ultrasound, and other imaging studies."
-        />
-
-        <RadiologyWorkspaceDrawer
-          open={workspaceOpen}
-          order={selectedOrder}
-          onOpenChange={(open) => {
-            setWorkspaceOpen(open);
-            if (!open) setSelectedOrder(null);
-          }}
-        />
-
-        <FormDrawer
-          open={orderFormOpen}
-          onOpenChange={(open) => {
-            setOrderFormOpen(open);
-            if (!open) setSelectedOrder(null);
-          }}
-          title={selectedOrder ? "Edit Radiology Order" : "New Radiology Order"}
-          description="Create or update imaging order."
-          size="lg"
-        >
-          <RadiologyOrderForm
-            defaultValues={
-              selectedOrder ? orderToFormValues(selectedOrder) : undefined
-            }
-            isSubmitting={createOrder.isPending || updateOrder.isPending}
-            onSubmit={handleOrderSubmit}
-            onCancel={() => {
-              setOrderFormOpen(false);
-              setSelectedOrder(null);
-            }}
-          />
-        </FormDrawer>
-
-        <FormDrawer
-          open={reportFormOpen}
-          onOpenChange={(open) => {
-            setReportFormOpen(open);
-            if (!open) setSelectedOrder(null);
-          }}
-          title="Radiology Report"
-          description="Enter report findings and impression."
-          size="lg"
-        >
-          {selectedOrder && (
-            <RadiologyReportForm
-              defaultValues={reportToFormValues(selectedOrder)}
-              isSubmitting={saveReport.isPending}
-              onSubmit={handleReportSubmit}
-              onCancel={() => {
-                setReportFormOpen(false);
-                setSelectedOrder(null);
-              }}
+        <div className="rounded-xl border bg-card p-4 shadow-sm">
+          <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px_180px_180px]">
+            <input
+              className="h-10 w-full rounded-md border bg-background px-3 text-sm"
+              placeholder="Search by order, patient, test, diagnosis..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
             />
-          )}
+            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as RadiologyOrderStatus | "all")}>
+              <option value="all">All Order Statuses</option>
+              {radiologyOrderStatusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={priorityFilter} onChange={(event) => setPriorityFilter(event.target.value as RadiologyPriority | "all")}>
+              <option value="all">All Priorities</option>
+              {radiologyPriorityOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={modalityFilter} onChange={(event) => setModalityFilter(event.target.value as RadiologyModality | "all")}>
+              <option value="all">All Modalities</option>
+              {modalityOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+            <select className="h-10 rounded-md border bg-background px-3 text-sm" value={reportStatusFilter} onChange={(event) => setReportStatusFilter(event.target.value as RadiologyReportStatus | "all")}>
+              <option value="all">All Report Statuses</option>
+              {radiologyReportStatusOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <Tabs defaultValue="orders" className="space-y-4">
+          <TabsList className="flex h-auto w-full flex-wrap justify-start gap-2 rounded-xl bg-muted/40 p-2">
+            <TabsTrigger className="h-9 flex-none px-4" value="orders">Orders</TabsTrigger>
+            <TabsTrigger className="h-9 flex-none px-4" value="reports">Reports</TabsTrigger>
+            <TabsTrigger className="h-9 flex-none px-4" value="tests">Test Catalogue</TabsTrigger>
+            <TabsTrigger className="h-9 flex-none px-4" value="viewer">Viewer Workspace</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="orders" className="space-y-4">
+            <Button onClick={() => setOrderDrawerOpen(true)}><Plus className="mr-2 h-4 w-4" />New Imaging Order</Button>
+            <DataTable columns={orderColumns} data={ordersQuery.data?.items ?? []} isLoading={ordersQuery.isLoading} search={search} onSearchChange={setSearch} emptyTitle="No radiology orders found" emptyDescription="Create imaging orders for X-Ray, CT, MRI, ultrasound, and other modalities." />
+          </TabsContent>
+
+          <TabsContent value="reports" className="space-y-4">
+            <Button onClick={() => setReportDrawerOpen(true)}><Plus className="mr-2 h-4 w-4" />New Report</Button>
+            <DataTable columns={reportColumns} data={reportsQuery.data?.items ?? []} isLoading={reportsQuery.isLoading} search={search} onSearchChange={setSearch} emptyTitle="No radiology reports found" emptyDescription="Draft, verified, critical, and approved reports will appear here." />
+          </TabsContent>
+
+          <TabsContent value="tests" className="space-y-4">
+            <Button onClick={() => setTestDrawerOpen(true)}><Plus className="mr-2 h-4 w-4" />Add Radiology Test</Button>
+            <DataTable columns={testColumns} data={testsQuery.data?.items ?? []} isLoading={testsQuery.isLoading} search={search} onSearchChange={setSearch} emptyTitle="No test catalogue records found" emptyDescription="Create imaging tests, protocols, preparation notes, duration, and modality pricing." />
+          </TabsContent>
+
+          <TabsContent value="viewer" className="space-y-4">
+            <div className="grid min-h-[480px] gap-4 lg:grid-cols-[280px_1fr_420px]">
+              <SectionCard className="p-4">
+                <h3 className="font-semibold">Study List</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Select a scheduled or reported study from the order list.</p>
+                <div className="mt-4 space-y-2 text-sm text-muted-foreground">
+                  <p>CT / MRI / X-Ray / Ultrasound worklist placeholder.</p>
+                  <p>DICOM integration will connect here later.</p>
+                </div>
+              </SectionCard>
+              <SectionCard className="flex items-center justify-center p-4">
+                <div className="text-center text-muted-foreground">
+                  <ScanLine className="mx-auto h-12 w-12" />
+                  <p className="mt-3 font-medium">PACS Viewer Workspace</p>
+                  <p className="text-sm">Zoom, rotate, brightness, contrast, measurements, and series navigation.</p>
+                </div>
+              </SectionCard>
+              <SectionCard className="p-4">
+                <h3 className="font-semibold">Report Preview</h3>
+                <p className="mt-1 text-sm text-muted-foreground">Structured report editor opens in the Reports tab.</p>
+              </SectionCard>
+            </div>
+          </TabsContent>
+        </Tabs>
+
+        <FormDrawer open={testDrawerOpen} onOpenChange={setTestDrawerOpen} title="Add Radiology Test" description="Create imaging test catalogue item." size="wide">
+          <RadiologyTestForm isSubmitting={createTest.isPending} onSubmit={handleCreateTest} onCancel={() => setTestDrawerOpen(false)} />
         </FormDrawer>
 
-        <ConfirmDialog
-          open={Boolean(deleteOrder)}
-          onOpenChange={() => setDeleteOrder(null)}
-          title="Delete radiology order?"
-          description={
-            deleteOrder
-              ? `This will permanently delete ${deleteOrder.order_number}.`
-              : "This order will be deleted."
-          }
-          confirmText="Delete"
-          danger
-          isLoading={deleteOrderMutation.isPending}
-          onConfirm={async () => {
-            if (!deleteOrder) return;
-            await deleteOrderMutation.mutateAsync(deleteOrder.id);
-            setDeleteOrder(null);
-          }}
-        />
+        <FormDrawer open={orderDrawerOpen} onOpenChange={setOrderDrawerOpen} title="New Imaging Order" description="Create a radiology order for patient imaging." size="wide">
+          <RadiologyOrderForm patients={patientOptionsQuery.data ?? []} doctors={doctorOptionsQuery.data ?? []} tests={testsQuery.data?.items ?? []} isSubmitting={createOrder.isPending} onSubmit={handleCreateOrder} onCancel={() => setOrderDrawerOpen(false)} />
+        </FormDrawer>
+
+        <FormDrawer open={reportDrawerOpen} onOpenChange={setReportDrawerOpen} title="New Radiology Report" description="Record clinical history, technique, findings, impression, and approval status." size="wide">
+          <RadiologyReportForm orders={reportOrdersQuery.data?.items ?? []} doctors={doctorOptionsQuery.data ?? []} isSubmitting={createReport.isPending} onSubmit={handleCreateReport} onCancel={() => setReportDrawerOpen(false)} />
+        </FormDrawer>
       </div>
     </AppShell>
   );
