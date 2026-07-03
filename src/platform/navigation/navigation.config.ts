@@ -13,7 +13,49 @@ import {
   Scissors,
 } from "lucide-react";
 
+// export const navigationItems = [
+//   { title: "Dashboard", href: "/dashboard" },
+//   { title: "Doctors", href: "/doctors" },
+//   { title: "Patients", href: "/patients" },
+//   { title: "Appointments", href: "/appointments" },
+//   { title: "OPD", href: "/opd" },
+//   { title: "Emergency", href: "/emergency" },
+//   { title: "IPD", href: "/ipd" },
+//   { title: "Nursing", href: "/nursing" },
+//   { title: "OT", href: "/ot" },
+//   { title: "Laboratory", href: "/lis" },
+//   { title: "Radiology", href: "/radiology" },
+//   { title: "Pharmacy", href: "/pharmacy" },
+//   { title: "Billing", href: "/billing" },
+//   { title: "Insurance", href: "/insurance" },
+//   { title: "HR", href: "/hr" },
+//   { title: "Finance", href: "/finance" },
+//   { title: "Reports", href: "/reports" },
+//   { title: "Activity Center", href: "/activity-center" },
+//   { title: "Administration", href: "/admin" },
+//   { title: "Security", href: "/security" },
+// ]
 export const navigationItems = [
+  {
+    title: "Inventory", 
+    href: "/inventory", 
+    icon: LayoutDashboard, 
+    permission: "inventory.view" 
+  },
+  
+  {
+    title: "HR", 
+    href: "/hr", 
+    icon: Users, 
+    permission: "hr.view" 
+  },
+  {
+    title: "Finance", 
+    href: "/finance", 
+    icon: Receipt, 
+    permission: "finance.view" 
+  },
+
   {
     title: "Dashboard",
     href: "/dashboard",

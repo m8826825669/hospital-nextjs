@@ -190,6 +190,10 @@ hr: {
 },
 inventory: {
   all: ["inventory"] as const,
+  items: {
+    all: ["inventory", "items"] as const,
+    list: (params: unknown) => ["inventory", "items", "list", params] as const,
+  },
   vendors: {
     all: ["inventory", "vendors"] as const,
     list: (params: unknown) => ["inventory", "vendors", "list", params] as const,
@@ -215,20 +219,21 @@ inventory: {
 },
 finance: {
   all: ["finance"] as const,
+  dashboard: ["finance", "dashboard"] as const,
   accounts: {
     all: ["finance", "accounts"] as const,
     list: (params: unknown) =>
       ["finance", "accounts", "list", params] as const,
   },
-  vouchers: {
-    all: ["finance", "vouchers"] as const,
+  costCenters: {
+    all: ["finance", "cost-centers"] as const,
     list: (params: unknown) =>
-      ["finance", "vouchers", "list", params] as const,
+      ["finance", "cost-centers", "list", params] as const,
   },
-  ledger: {
-    all: ["finance", "ledger"] as const,
+  journalEntries: {
+    all: ["finance", "journal-entries"] as const,
     list: (params: unknown) =>
-      ["finance", "ledger", "list", params] as const,
+      ["finance", "journal-entries", "list", params] as const,
   },
 },
 radiology: {

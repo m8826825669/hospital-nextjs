@@ -11,10 +11,11 @@ export const accountTypeOptions = [
 export const voucherTypeOptions = [
   { label: "Receipt", value: "receipt" },
   { label: "Payment", value: "payment" },
+  { label: "Contra", value: "contra" },
   { label: "Journal", value: "journal" },
 ];
 
-export const voucherStatusOptions = [
+export const journalStatusOptions = [
   { label: "Draft", value: "draft" },
   { label: "Posted", value: "posted" },
   { label: "Cancelled", value: "cancelled" },

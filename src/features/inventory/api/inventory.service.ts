@@ -4,6 +4,8 @@ import { apiClient } from "@/platform/api/api-client";
 import type { ApiListResponse } from "@/platform/api/api.types";
 import type {
   Grn,
+  InventoryBulkImportResult,
+  InventoryItem,
   InventoryListParams,
   PurchaseOrder,
   StockAdjustment,
@@ -12,6 +14,8 @@ import type {
 } from "../types/inventory.types";
 import type {
   GrnFormValues,
+  InventoryItemBulkFormValues,
+  InventoryItemFormValues,
   PurchaseOrderFormValues,
   StockAdjustmentFormValues,
   VendorFormValues,
@@ -19,6 +23,29 @@ import type {
 } from "../schemas/inventory.schema";
 
 export const inventoryService = {
+  async listItems(params: InventoryListParams): Promise<ApiListResponse<InventoryItem>> {
+    const response = await apiClient.get<ApiListResponse<InventoryItem>>(
+      "/inventory/items",
+      { params }
+    );
+    return response.data;
+  },
+
+  async createItem(payload: InventoryItemFormValues): Promise<InventoryItem> {
+    const response = await apiClient.post<InventoryItem>("/inventory/items", payload);
+    return response.data;
+  },
+
+  async bulkCreateItems(
+    payload: InventoryItemBulkFormValues
+  ): Promise<InventoryBulkImportResult> {
+    const response = await apiClient.post<InventoryBulkImportResult>(
+      "/inventory/items/bulk",
+      payload
+    );
+    return response.data;
+  },
+
   async listVendors(params: InventoryListParams): Promise<ApiListResponse<Vendor>> {
     const response = await apiClient.get<ApiListResponse<Vendor>>(
       "/inventory/vendors",

@@ -8,13 +8,14 @@ import type {
 } from "../types/hr.types";
 
 export function EmployeeStatusBadge({ status }: { status: EmployeeStatus }) {
-  const variantMap: Record<EmployeeStatus, "success" | "muted" | "danger"> = {
+  const variantMap: Record<EmployeeStatus, "success" | "muted" | "danger" | "warning"> = {
     active: "success",
     inactive: "muted",
+    on_leave: "warning",
     terminated: "danger",
   };
 
-  return <StatusBadge label={status.toUpperCase()} variant={variantMap[status]} />;
+  return <StatusBadge label={status.replace("_", " ").toUpperCase()} variant={variantMap[status]} />;
 }
 
 export function AttendanceStatusBadge({
@@ -32,7 +33,7 @@ export function AttendanceStatusBadge({
     half_day: "info",
   };
 
-  return <StatusBadge label={status.toUpperCase()} variant={variantMap[status]} />;
+  return <StatusBadge label={status.replace("_", " ").toUpperCase()} variant={variantMap[status]} />;
 }
 
 export function LeaveStatusBadge({ status }: { status: LeaveStatus }) {

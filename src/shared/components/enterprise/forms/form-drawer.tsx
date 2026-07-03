@@ -10,7 +10,7 @@ interface FormDrawerProps {
   title: string;
   description?: string;
   children: ReactNode;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "4xl" | "6xl" | "wide";
   onOpenChange: (open: boolean) => void;
 }
 

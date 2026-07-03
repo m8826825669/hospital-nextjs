@@ -3,7 +3,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { PackagePlus, Plus, Upload } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { Button } from "@/components/ui/button";
@@ -18,6 +18,8 @@ import {
 import { AppShell } from "@/shared/components/layout/app-shell";
 
 import { GrnForm } from "@/features/inventory/components/grn-form";
+import { ItemBulkForm } from "@/features/inventory/components/item-bulk-form";
+import { ItemForm } from "@/features/inventory/components/item-form";
 import {
   AdjustmentTypeBadge,
   GrnStatusBadge,
@@ -30,13 +32,16 @@ import { VendorForm } from "@/features/inventory/components/vendor-form";
 import { WarehouseForm } from "@/features/inventory/components/warehouse-form";
 
 import {
+  useBulkCreateInventoryItems,
   useCreateGrn,
+  useCreateInventoryItem,
   useCreatePurchaseOrder,
   useCreateStockAdjustment,
   useCreateVendor,
   useCreateWarehouse,
   useDeleteVendor,
   useDeleteWarehouse,
+  useInventoryItems,
   useGrns,
   usePurchaseOrders,
   useStockAdjustments,
@@ -48,6 +53,7 @@ import {
 
 import type {
   Grn,
+  InventoryItem,
   PurchaseOrder,
   StockAdjustment,
   Vendor,
@@ -55,6 +61,8 @@ import type {
 } from "@/features/inventory/types/inventory.types";
 import type {
   GrnFormValues,
+  InventoryItemBulkFormValues,
+  InventoryItemFormValues,
   PurchaseOrderFormValues,
   StockAdjustmentFormValues,
   VendorFormValues,
@@ -88,6 +96,8 @@ function warehouseToFormValues(
 export default function InventoryPage() {
   const [search, setSearch] = useState("");
 
+  const [itemFormOpen, setItemFormOpen] = useState(false);
+  const [itemBulkOpen, setItemBulkOpen] = useState(false);
   const [vendorFormOpen, setVendorFormOpen] = useState(false);
   const [warehouseFormOpen, setWarehouseFormOpen] = useState(false);
   const [poFormOpen, setPoFormOpen] = useState(false);
@@ -111,11 +121,15 @@ export default function InventoryPage() {
     [search]
   );
 
+  const itemsQuery = useInventoryItems(params);
   const vendorsQuery = useVendors(params);
   const warehousesQuery = useWarehouses(params);
   const purchaseOrdersQuery = usePurchaseOrders(params);
   const grnsQuery = useGrns(params);
   const adjustmentsQuery = useStockAdjustments(params);
+
+  const createItem = useCreateInventoryItem();
+  const bulkCreateItems = useBulkCreateInventoryItems();
 
   const createVendor = useCreateVendor();
   const updateVendor = useUpdateVendor();
@@ -128,6 +142,30 @@ export default function InventoryPage() {
   const createPurchaseOrder = useCreatePurchaseOrder();
   const createGrn = useCreateGrn();
   const createAdjustment = useCreateStockAdjustment();
+
+  const itemColumns: ColumnDef<InventoryItem>[] = [
+    { accessorKey: "name", header: "Item" },
+    { accessorKey: "code", header: "Code" },
+    { accessorKey: "category", header: "Category" },
+    { accessorKey: "unit", header: "UOM" },
+    { accessorKey: "brand", header: "Brand" },
+    { accessorKey: "reorder_level", header: "Reorder" },
+    {
+      accessorKey: "purchase_price",
+      header: "Purchase",
+      cell: ({ row }) => `₹${row.original.purchase_price}`,
+    },
+    {
+      accessorKey: "selling_price",
+      header: "Selling",
+      cell: ({ row }) => `₹${row.original.selling_price}`,
+    },
+    {
+      accessorKey: "is_active",
+      header: "Active",
+      cell: ({ row }) => (row.original.is_active ? "Yes" : "No"),
+    },
+  ];
 
   const vendorColumns: ColumnDef<Vendor>[] = [
     { accessorKey: "name", header: "Vendor" },
@@ -243,6 +281,16 @@ export default function InventoryPage() {
     { accessorKey: "reason", header: "Reason" },
   ];
 
+  async function handleItemSubmit(values: InventoryItemFormValues) {
+    await createItem.mutateAsync(values);
+    setItemFormOpen(false);
+  }
+
+  async function handleBulkItemSubmit(values: InventoryItemBulkFormValues) {
+    await bulkCreateItems.mutateAsync(values);
+    setItemBulkOpen(false);
+  }
+
   async function handleVendorSubmit(values: VendorFormValues) {
     if (selectedVendor) {
       await updateVendor.mutateAsync({
@@ -301,14 +349,39 @@ export default function InventoryPage() {
           onChange={(event) => setSearch(event.target.value)}
         />
 
-        <Tabs defaultValue="vendors">
-          <TabsList>
-            <TabsTrigger value="vendors">Vendors</TabsTrigger>
-            <TabsTrigger value="warehouses">Warehouses</TabsTrigger>
-            <TabsTrigger value="po">Purchase Orders</TabsTrigger>
-            <TabsTrigger value="grn">GRN</TabsTrigger>
-            <TabsTrigger value="adjustments">Adjustments</TabsTrigger>
+        <Tabs defaultValue="items" className="space-y-6">
+          <TabsList className="flex h-auto w-full flex-wrap justify-start gap-2 rounded-xl bg-muted/40 p-2">
+            <TabsTrigger className="h-7 flex-none px-4" value="items">Items</TabsTrigger>
+            <TabsTrigger className="h-7 flex-none px-4" value="vendors">Vendors</TabsTrigger>
+            <TabsTrigger className="h-7 flex-none px-4" value="warehouses">Warehouses</TabsTrigger>
+            <TabsTrigger className="h-7 flex-none px-4" value="po">Purchase Orders</TabsTrigger>
+            <TabsTrigger className="h-7 flex-none px-4" value="grn">GRN</TabsTrigger>
+            <TabsTrigger className="h-7 flex-none px-4" value="adjustments">Adjustments</TabsTrigger>
           </TabsList>
+
+
+          <TabsContent value="items" className="mt-4 space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
+              <Button onClick={() => setItemFormOpen(true)}>
+                <PackagePlus className="mr-2 h-4 w-4" />
+                Add Item
+              </Button>
+              <Button variant="outline" onClick={() => setItemBulkOpen(true)}>
+                <Upload className="mr-2 h-4 w-4" />
+                Bulk Import
+              </Button>
+            </div>
+
+            <DataTable
+              columns={itemColumns}
+              data={itemsQuery.data?.items ?? []}
+              isLoading={itemsQuery.isLoading}
+              search={search}
+              onSearchChange={setSearch}
+              emptyTitle="No inventory items found"
+              emptyDescription="Create item master records for purchase orders, GRN, stock adjustment, pharmacy, laboratory, and OT consumption."
+            />
+          </TabsContent>
 
           <TabsContent value="vendors" className="mt-4 space-y-4">
             <Button
@@ -406,6 +479,35 @@ export default function InventoryPage() {
           </TabsContent>
         </Tabs>
 
+
+        <FormDrawer
+          open={itemFormOpen}
+          onOpenChange={setItemFormOpen}
+          title="Add Inventory Item"
+          description="Create an item master record with stock rules, pricing, tax, and status."
+          size="4xl"
+        >
+          <ItemForm
+            isSubmitting={createItem.isPending}
+            onSubmit={handleItemSubmit}
+            onCancel={() => setItemFormOpen(false)}
+          />
+        </FormDrawer>
+
+        <FormDrawer
+          open={itemBulkOpen}
+          onOpenChange={setItemBulkOpen}
+          title="Bulk Import Inventory Items"
+          description="Upload or paste CSV data to create many inventory item master records."
+          size="wide"
+        >
+          <ItemBulkForm
+            isSubmitting={bulkCreateItems.isPending}
+            onSubmit={handleBulkItemSubmit}
+            onCancel={() => setItemBulkOpen(false)}
+          />
+        </FormDrawer>
+
         <FormDrawer
           open={vendorFormOpen}
           onOpenChange={(open) => {
@@ -452,24 +554,35 @@ export default function InventoryPage() {
           />
         </FormDrawer>
 
-        <FormDrawer open={poFormOpen} onOpenChange={setPoFormOpen} title="New Purchase Order" description="Create purchase order." size="md">
+        <FormDrawer
+          open={poFormOpen}
+          onOpenChange={setPoFormOpen}
+          title="New Purchase Order"
+          description="Create supplier order with item lines and calculated totals."
+          size="wide"
+        >
           <PurchaseOrderForm
+            vendors={vendorsQuery.data?.items ?? []}
+            warehouses={warehousesQuery.data?.items ?? []}
             isSubmitting={createPurchaseOrder.isPending}
             onSubmit={handlePoSubmit}
             onCancel={() => setPoFormOpen(false)}
           />
         </FormDrawer>
 
-        <FormDrawer open={grnFormOpen} onOpenChange={setGrnFormOpen} title="New GRN" description="Create goods receipt note." size="md">
+        <FormDrawer open={grnFormOpen} onOpenChange={setGrnFormOpen} title="New GRN" description="Create goods receipt note." size="6xl">
           <GrnForm
+            purchaseOrders={purchaseOrdersQuery.data?.items ?? []}
             isSubmitting={createGrn.isPending}
             onSubmit={handleGrnSubmit}
             onCancel={() => setGrnFormOpen(false)}
           />
         </FormDrawer>
 
-        <FormDrawer open={adjustmentFormOpen} onOpenChange={setAdjustmentFormOpen} title="Stock Adjustment" description="Record stock adjustment." size="md">
+        <FormDrawer open={adjustmentFormOpen} onOpenChange={setAdjustmentFormOpen} title="Stock Adjustment" description="Record stock adjustment." size="6xl">
           <StockAdjustmentForm
+            items={itemsQuery.data?.items ?? []}
+            warehouses={warehousesQuery.data?.items ?? []}
             isSubmitting={createAdjustment.isPending}
             onSubmit={handleAdjustmentSubmit}
             onCancel={() => setAdjustmentFormOpen(false)}

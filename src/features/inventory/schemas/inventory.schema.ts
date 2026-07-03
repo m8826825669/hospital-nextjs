@@ -2,6 +2,29 @@
 
 import { z } from "zod";
 
+
+export const inventoryItemFormSchema = z.object({
+  name: z.string().min(2, "Item name is required"),
+  code: z.string().min(1, "Item code is required"),
+  category: z.string().min(1, "Category is required"),
+  unit: z.string().min(1, "Unit is required"),
+  brand: z.string().optional(),
+  generic_name: z.string().optional(),
+  description: z.string().optional(),
+  minimum_stock: z.coerce.number().min(0).default(0),
+  reorder_level: z.coerce.number().min(0).default(0),
+  maximum_stock: z.coerce.number().min(0).default(0),
+  purchase_price: z.coerce.number().min(0).default(0),
+  selling_price: z.coerce.number().min(0).default(0),
+  gst_percent: z.coerce.number().min(0).max(100).optional(),
+  hsn_code: z.string().optional(),
+  is_active: z.boolean().default(true),
+});
+
+export const inventoryItemBulkFormSchema = z.object({
+  items: z.array(inventoryItemFormSchema).min(1, "At least one item is required"),
+});
+
 export const vendorFormSchema = z.object({
   name: z.string().min(2, "Vendor name is required"),
   code: z.string().optional(),
@@ -58,3 +81,7 @@ export type GrnFormValues = z.output<typeof grnFormSchema>;
 
 export type StockAdjustmentFormInput = z.input<typeof stockAdjustmentFormSchema>;
 export type StockAdjustmentFormValues = z.output<typeof stockAdjustmentFormSchema>;
+
+export type InventoryItemFormInput = z.input<typeof inventoryItemFormSchema>;
+export type InventoryItemFormValues = z.output<typeof inventoryItemFormSchema>;
+export type InventoryItemBulkFormValues = z.output<typeof inventoryItemBulkFormSchema>;

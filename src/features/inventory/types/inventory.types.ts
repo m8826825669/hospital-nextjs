@@ -13,6 +13,36 @@ export type GrnStatus = "draft" | "posted" | "cancelled";
 export type StockAdjustmentType = "increase" | "decrease" | "damage" | "expiry" | "correction";
 export type StockTransferStatus = "draft" | "in_transit" | "received" | "cancelled";
 
+
+export interface InventoryItem {
+  id: string;
+  hospital_id: string;
+  name: string;
+  code: string;
+  category: string;
+  unit: string;
+  brand?: string | null;
+  generic_name?: string | null;
+  description?: string | null;
+  minimum_stock: number;
+  reorder_level: number;
+  maximum_stock: number;
+  purchase_price: number;
+  selling_price: number;
+  gst_percent?: number | null;
+  hsn_code?: string | null;
+  is_active: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface InventoryBulkImportResult {
+  created: number;
+  skipped: number;
+  errors: string[];
+  items: InventoryItem[];
+}
+
 export interface Vendor {
   id: string;
   hospital_id: string;

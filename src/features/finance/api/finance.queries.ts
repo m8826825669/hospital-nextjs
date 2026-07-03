@@ -9,8 +9,16 @@ import { financeService } from "./finance.service";
 import type { FinanceListParams } from "../types/finance.types";
 import type {
   AccountFormValues,
-  VoucherFormValues,
+  CostCenterFormValues,
+  JournalEntryFormValues,
 } from "../schemas/finance.schema";
+
+export function useFinanceDashboard() {
+  return useQuery({
+    queryKey: queryKeys.finance.dashboard,
+    queryFn: () => financeService.getDashboard(),
+  });
+}
 
 export function useAccounts(params: FinanceListParams) {
   return useQuery({
@@ -23,10 +31,10 @@ export function useCreateAccount() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: AccountFormValues) =>
-      financeService.createAccount(payload),
+    mutationFn: (payload: AccountFormValues) => financeService.createAccount(payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.finance.accounts.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.dashboard });
       toast.success("Account created");
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
@@ -41,6 +49,7 @@ export function useUpdateAccount() {
       financeService.updateAccount(id, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.finance.accounts.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.dashboard });
       toast.success("Account updated");
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
@@ -54,63 +63,80 @@ export function useDeleteAccount() {
     mutationFn: (id: string) => financeService.deleteAccount(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.finance.accounts.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.dashboard });
       toast.success("Account deleted");
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 }
 
-export function useVouchers(params: FinanceListParams) {
+export function useCostCenters(params: FinanceListParams) {
   return useQuery({
-    queryKey: queryKeys.finance.vouchers.list(params),
-    queryFn: () => financeService.listVouchers(params),
+    queryKey: queryKeys.finance.costCenters.list(params),
+    queryFn: () => financeService.listCostCenters(params),
   });
 }
 
-export function useCreateVoucher() {
+export function useCreateCostCenter() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (payload: VoucherFormValues) =>
-      financeService.createVoucher(payload),
+    mutationFn: (payload: CostCenterFormValues) => financeService.createCostCenter(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.finance.vouchers.all });
-      toast.success("Voucher created");
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.costCenters.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.dashboard });
+      toast.success("Cost center created");
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 }
 
-export function usePostVoucher() {
+export function useUpdateCostCenter() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => financeService.postVoucher(id),
+    mutationFn: ({ id, payload }: { id: string; payload: CostCenterFormValues }) =>
+      financeService.updateCostCenter(id, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.finance.vouchers.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.finance.ledger.all });
-      toast.success("Voucher posted");
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.costCenters.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.dashboard });
+      toast.success("Cost center updated");
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 }
 
-export function useCancelVoucher() {
+export function useDeleteCostCenter() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (id: string) => financeService.cancelVoucher(id),
+    mutationFn: (id: string) => financeService.deleteCostCenter(id),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.finance.vouchers.all });
-      toast.success("Voucher cancelled");
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.costCenters.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.dashboard });
+      toast.success("Cost center deleted");
     },
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 }
 
-export function useLedger(params: FinanceListParams) {
+export function useJournalEntries(params: FinanceListParams) {
   return useQuery({
-    queryKey: queryKeys.finance.ledger.list(params),
-    queryFn: () => financeService.listLedger(params),
+    queryKey: queryKeys.finance.journalEntries.list(params),
+    queryFn: () => financeService.listJournalEntries(params),
+  });
+}
+
+export function useCreateJournalEntry() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: JournalEntryFormValues) => financeService.createJournalEntry(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.journalEntries.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.finance.dashboard });
+      toast.success("Journal entry created");
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 }

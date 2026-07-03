@@ -10,11 +10,48 @@ import { inventoryService } from "./inventory.service";
 import type { InventoryListParams } from "../types/inventory.types";
 import type {
   GrnFormValues,
+  InventoryItemBulkFormValues,
+  InventoryItemFormValues,
   PurchaseOrderFormValues,
   StockAdjustmentFormValues,
   VendorFormValues,
   WarehouseFormValues,
 } from "../schemas/inventory.schema";
+
+
+export function useInventoryItems(params: InventoryListParams) {
+  return useQuery({
+    queryKey: queryKeys.inventory.items.list(params),
+    queryFn: () => inventoryService.listItems(params),
+  });
+}
+
+export function useCreateInventoryItem() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: InventoryItemFormValues) => inventoryService.createItem(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventory.items.all });
+      toast.success("Inventory item created");
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
+}
+
+export function useBulkCreateInventoryItems() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: InventoryItemBulkFormValues) =>
+      inventoryService.bulkCreateItems(payload),
+    onSuccess: (result) => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.inventory.items.all });
+      toast.success(`Bulk import complete: ${result.created} created, ${result.skipped} skipped`);
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
+}
 
 export function useVendors(params: InventoryListParams) {
   return useQuery({

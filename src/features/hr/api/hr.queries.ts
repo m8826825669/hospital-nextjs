@@ -106,8 +106,13 @@ export function useUpdateLeaveStatus() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: LeaveStatus }) =>
-      hrService.updateLeaveStatus(id, status),
+    mutationFn: ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: Extract<LeaveStatus, "approved" | "rejected">;
+    }) => hrService.updateLeaveStatus(id, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.hr.leaves.all });
       toast.success("Leave status updated");

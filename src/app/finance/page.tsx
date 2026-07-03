@@ -3,7 +3,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { BookOpen, Building2, Calculator, Plus, Scale } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { Button } from "@/components/ui/button";
@@ -14,57 +14,88 @@ import {
   DataTable,
   FormDrawer,
   PageHeader,
+  StatCard,
 } from "@/shared/components/enterprise";
 import { AppShell } from "@/shared/components/layout/app-shell";
 
+import { useDepartments } from "@/features/admin/api/admin.queries";
 import { AccountForm } from "@/features/finance/components/account-form";
-import { VoucherForm } from "@/features/finance/components/voucher-form";
+import { CostCenterForm } from "@/features/finance/components/cost-center-form";
+import { JournalEntryForm } from "@/features/finance/components/journal-entry-form";
 import {
   AccountTypeBadge,
-  VoucherStatusBadge,
-  VoucherTypeBadge,
+  JournalStatusBadge,
 } from "@/features/finance/components/finance-badges";
-
 import {
   useAccounts,
-  useCancelVoucher,
+  useCostCenters,
   useCreateAccount,
-  useCreateVoucher,
+  useCreateCostCenter,
+  useCreateJournalEntry,
   useDeleteAccount,
-  useLedger,
-  usePostVoucher,
+  useDeleteCostCenter,
+  useFinanceDashboard,
+  useJournalEntries,
   useUpdateAccount,
-  useVouchers,
+  useUpdateCostCenter,
 } from "@/features/finance/api/finance.queries";
-
 import type {
-  Account,
-  LedgerEntry,
-  Voucher,
+  CostCenter,
+  FinanceAccount,
+  JournalEntry,
+  AccountType,
+  JournalStatus,
 } from "@/features/finance/types/finance.types";
 import type {
   AccountFormValues,
-  VoucherFormValues,
+  CostCenterFormValues,
+  JournalEntryFormValues,
 } from "@/features/finance/schemas/finance.schema";
 
-function accountToFormValues(account: Account): Partial<AccountFormValues> {
+function formatCurrency(value: number | undefined) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    maximumFractionDigits: 2,
+  }).format(value ?? 0);
+}
+
+function accountToFormValues(account: FinanceAccount): Partial<AccountFormValues> {
   return {
     code: account.code,
     name: account.name,
-    type: account.type,
+    account_type: account.account_type,
     parent_id: account.parent_id ?? "",
+    description: account.description ?? "",
     is_active: account.is_active,
   };
 }
 
+function costCenterToFormValues(costCenter: CostCenter): Partial<CostCenterFormValues> {
+  return {
+    code: costCenter.code,
+    name: costCenter.name,
+    department_id: costCenter.department_id ?? "",
+    description: costCenter.description ?? "",
+    is_active: costCenter.is_active,
+  };
+}
+
 export default function FinancePage() {
+  const today = new Date().toISOString().slice(0, 10);
   const [search, setSearch] = useState("");
+  const [accountType, setAccountType] = useState("all");
+  const [journalStatus, setJournalStatus] = useState("all");
+  const [entryDate, setEntryDate] = useState(today);
 
   const [accountFormOpen, setAccountFormOpen] = useState(false);
-  const [voucherFormOpen, setVoucherFormOpen] = useState(false);
+  const [costCenterFormOpen, setCostCenterFormOpen] = useState(false);
+  const [journalFormOpen, setJournalFormOpen] = useState(false);
 
-  const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
-  const [deleteAccount, setDeleteAccount] = useState<Account | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<FinanceAccount | null>(null);
+  const [selectedCostCenter, setSelectedCostCenter] = useState<CostCenter | null>(null);
+  const [deleteAccount, setDeleteAccount] = useState<FinanceAccount | null>(null);
+  const [deleteCostCenter, setDeleteCostCenter] = useState<CostCenter | null>(null);
 
   const params = useMemo(
     () => ({
@@ -75,27 +106,54 @@ export default function FinancePage() {
     [search]
   );
 
-  const accountsQuery = useAccounts(params);
-  const vouchersQuery = useVouchers(params);
-  const ledgerQuery = useLedger(params);
+ const accountParams = useMemo(
+  () => ({
+    page: 1,
+    size: 100,
+    search: search || undefined,
+    account_type: accountType === "all" ? undefined : (accountType as AccountType),
+  }),
+  [search, accountType]
+);
+
+const journalParams = useMemo(
+  () => ({
+    page: 1,
+    size: 100,
+    search: search || undefined,
+    status: journalStatus === "all" ? undefined : (journalStatus as JournalStatus),
+  }),
+  [search, journalStatus]
+);
+
+  const departmentsQuery = useDepartments({ page: 1, size: 100 });
+  const dashboardQuery = useFinanceDashboard();
+  const accountsQuery = useAccounts(accountParams);
+  const costCentersQuery = useCostCenters(params);
+  const journalEntriesQuery = useJournalEntries(journalParams);
 
   const createAccount = useCreateAccount();
   const updateAccount = useUpdateAccount();
   const deleteAccountMutation = useDeleteAccount();
+  const createCostCenter = useCreateCostCenter();
+  const updateCostCenter = useUpdateCostCenter();
+  const deleteCostCenterMutation = useDeleteCostCenter();
+  const createJournalEntry = useCreateJournalEntry();
 
-  const createVoucher = useCreateVoucher();
-  const postVoucher = usePostVoucher();
-  const cancelVoucher = useCancelVoucher();
+  const dashboard = dashboardQuery.data;
+  const departments = departmentsQuery.data?.items ?? [];
+  const accounts = accountsQuery.data?.items ?? [];
+  const costCenters = costCentersQuery.data?.items ?? [];
 
-  const accountColumns: ColumnDef<Account>[] = [
+  const accountColumns: ColumnDef<FinanceAccount>[] = [
     { accessorKey: "code", header: "Code" },
     { accessorKey: "name", header: "Account" },
     {
-      accessorKey: "type",
+      accessorKey: "account_type",
       header: "Type",
-      cell: ({ row }) => <AccountTypeBadge type={row.original.type} />,
+      cell: ({ row }) => <AccountTypeBadge type={row.original.account_type} />,
     },
-    { accessorKey: "parent_name", header: "Parent" },
+    { accessorKey: "description", header: "Description" },
     {
       accessorKey: "is_active",
       header: "Active",
@@ -124,28 +182,22 @@ export default function FinancePage() {
     },
   ];
 
-  const voucherColumns: ColumnDef<Voucher>[] = [
-    { accessorKey: "voucher_number", header: "Voucher" },
+  const costCenterColumns: ColumnDef<CostCenter>[] = [
+    { accessorKey: "code", header: "Code" },
+    { accessorKey: "name", header: "Cost Center" },
     {
-      accessorKey: "voucher_type",
-      header: "Type",
-      cell: ({ row }) => (
-        <VoucherTypeBadge type={row.original.voucher_type} />
-      ),
+      accessorKey: "department_id",
+      header: "Department",
+      cell: ({ row }) => {
+        const department = departments.find((item) => item.id === row.original.department_id);
+        return department?.name ?? "-";
+      },
     },
-    { accessorKey: "voucher_date", header: "Date" },
-    { accessorKey: "account_name", header: "Account" },
+    { accessorKey: "description", header: "Description" },
     {
-      accessorKey: "amount",
-      header: "Amount",
-      cell: ({ row }) => `₹${row.original.amount}`,
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => (
-        <VoucherStatusBadge status={row.original.status} />
-      ),
+      accessorKey: "is_active",
+      header: "Active",
+      cell: ({ row }) => (row.original.is_active ? "Yes" : "No"),
     },
     {
       id: "actions",
@@ -153,13 +205,16 @@ export default function FinancePage() {
         <ActionMenu
           items={[
             {
-              label: "Post Voucher",
-              onClick: () => postVoucher.mutate(row.original.id),
+              label: "Edit",
+              onClick: () => {
+                setSelectedCostCenter(row.original);
+                setCostCenterFormOpen(true);
+              },
             },
             {
-              label: "Cancel Voucher",
+              label: "Delete",
               danger: true,
-              onClick: () => cancelVoucher.mutate(row.original.id),
+              onClick: () => setDeleteCostCenter(row.original),
             },
           ]}
         />
@@ -167,34 +222,31 @@ export default function FinancePage() {
     },
   ];
 
-  const ledgerColumns: ColumnDef<LedgerEntry>[] = [
-    { accessorKey: "voucher_date", header: "Date" },
-    { accessorKey: "voucher_number", header: "Voucher" },
-    { accessorKey: "account_name", header: "Account" },
+  const journalColumns: ColumnDef<JournalEntry>[] = [
+    { accessorKey: "entry_number", header: "Entry No" },
+    { accessorKey: "entry_date", header: "Date" },
+    { accessorKey: "reference", header: "Reference" },
     { accessorKey: "description", header: "Description" },
     {
-      accessorKey: "debit",
+      accessorKey: "total_debit",
       header: "Debit",
-      cell: ({ row }) => `₹${row.original.debit}`,
+      cell: ({ row }) => formatCurrency(row.original.total_debit),
     },
     {
-      accessorKey: "credit",
+      accessorKey: "total_credit",
       header: "Credit",
-      cell: ({ row }) => `₹${row.original.credit}`,
+      cell: ({ row }) => formatCurrency(row.original.total_credit),
     },
     {
-      accessorKey: "balance",
-      header: "Balance",
-      cell: ({ row }) => `₹${row.original.balance}`,
+      accessorKey: "status",
+      header: "Status",
+      cell: ({ row }) => <JournalStatusBadge status={row.original.status} />,
     },
   ];
 
   async function handleAccountSubmit(values: AccountFormValues) {
     if (selectedAccount) {
-      await updateAccount.mutateAsync({
-        id: selectedAccount.id,
-        payload: values,
-      });
+      await updateAccount.mutateAsync({ id: selectedAccount.id, payload: values });
     } else {
       await createAccount.mutateAsync(values);
     }
@@ -203,9 +255,20 @@ export default function FinancePage() {
     setSelectedAccount(null);
   }
 
-  async function handleVoucherSubmit(values: VoucherFormValues) {
-    await createVoucher.mutateAsync(values);
-    setVoucherFormOpen(false);
+  async function handleCostCenterSubmit(values: CostCenterFormValues) {
+    if (selectedCostCenter) {
+      await updateCostCenter.mutateAsync({ id: selectedCostCenter.id, payload: values });
+    } else {
+      await createCostCenter.mutateAsync(values);
+    }
+
+    setCostCenterFormOpen(false);
+    setSelectedCostCenter(null);
+  }
+
+  async function handleJournalSubmit(values: JournalEntryFormValues) {
+    await createJournalEntry.mutateAsync(values);
+    setJournalFormOpen(false);
   }
 
   return (
@@ -213,71 +276,149 @@ export default function FinancePage() {
       <div className="space-y-6">
         <PageHeader
           title="Finance"
-          description="Manage chart of accounts, vouchers, general ledger, receipts, payments, and journals."
+          description="Manage chart of accounts, cost centers, journal entries, and finance controls."
         />
 
-        <input
-          className="h-10 w-full rounded-md border bg-background px-3 text-sm"
-          placeholder="Search finance records..."
-          value={search}
-          onChange={(event) => setSearch(event.target.value)}
-        />
+        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+          <StatCard
+            title="Accounts"
+            value={dashboard?.total_accounts ?? 0}
+            description="Chart of accounts"
+            icon={<BookOpen className="h-5 w-5" />}
+          />
+          <StatCard
+            title="Cost Centers"
+            value={dashboard?.active_cost_centers ?? 0}
+            description="Active centers"
+            icon={<Building2 className="h-5 w-5" />}
+          />
+          <StatCard
+            title="Journal Entries"
+            value={dashboard?.journal_entries ?? 0}
+            description="Finance postings"
+            icon={<Calculator className="h-5 w-5" />}
+          />
+          <StatCard
+            title="Total Debit"
+            value={formatCurrency(dashboard?.total_debit)}
+            description="Posted value"
+            icon={<Scale className="h-5 w-5" />}
+          />
+          <StatCard
+            title="Balance Diff"
+            value={formatCurrency(dashboard?.balance_difference)}
+            description="Debit - credit"
+            icon={<Scale className="h-5 w-5" />}
+          />
+        </div>
 
-        <Tabs defaultValue="accounts">
-          <TabsList>
-            <TabsTrigger value="accounts">Chart of Accounts</TabsTrigger>
-            <TabsTrigger value="vouchers">Vouchers</TabsTrigger>
-            <TabsTrigger value="ledger">General Ledger</TabsTrigger>
+        <div className="rounded-xl border bg-card p-4 shadow-sm">
+          <div className="grid gap-3 lg:grid-cols-[1fr_180px_180px_180px]">
+            <input
+              className="h-10 rounded-md border bg-background px-3 text-sm"
+              placeholder="Search finance records by code, name, reference..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+            <select
+              className="h-10 rounded-md border bg-background px-3 text-sm"
+              value={accountType}
+              onChange={(event) => setAccountType(event.target.value)}
+            >
+              <option value="all">All Account Types</option>
+              <option value="asset">Asset</option>
+              <option value="liability">Liability</option>
+              <option value="equity">Equity</option>
+              <option value="income">Income</option>
+              <option value="expense">Expense</option>
+            </select>
+            <select
+              className="h-10 rounded-md border bg-background px-3 text-sm"
+              value={journalStatus}
+              onChange={(event) => setJournalStatus(event.target.value)}
+            >
+              <option value="all">All Journal Statuses</option>
+              <option value="draft">Draft</option>
+              <option value="posted">Posted</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+            <input
+              className="h-10 rounded-md border bg-background px-3 text-sm"
+              type="date"
+              value={entryDate}
+              onChange={(event) => setEntryDate(event.target.value)}
+            />
+          </div>
+        </div>
+
+        <Tabs defaultValue="accounts" className="space-y-6">
+          <TabsList className="flex h-auto w-full flex-wrap justify-start gap-2 rounded-xl bg-muted/40 p-2">
+            <TabsTrigger className="h-9 flex-none px-4" value="accounts">Chart of Accounts</TabsTrigger>
+            <TabsTrigger className="h-9 flex-none px-4" value="cost-centers">Cost Centers</TabsTrigger>
+            <TabsTrigger className="h-9 flex-none px-4" value="journals">Journal Entries</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="accounts" className="mt-4 space-y-4">
-            <Button
-              onClick={() => {
-                setSelectedAccount(null);
-                setAccountFormOpen(true);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Account
-            </Button>
-
+          <TabsContent value="accounts" className="space-y-4">
+            <div className="flex justify-end">
+              <Button
+                onClick={() => {
+                  setSelectedAccount(null);
+                  setAccountFormOpen(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Account
+              </Button>
+            </div>
             <DataTable
               columns={accountColumns}
-              data={accountsQuery.data?.items ?? []}
+              data={accounts}
               isLoading={accountsQuery.isLoading}
               search={search}
               onSearchChange={setSearch}
               emptyTitle="No accounts found"
-              emptyDescription="Create accounts for finance posting and ledger."
+              emptyDescription="Create accounts for ledger and finance posting."
             />
           </TabsContent>
 
-          <TabsContent value="vouchers" className="mt-4 space-y-4">
-            <Button onClick={() => setVoucherFormOpen(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Voucher
-            </Button>
-
+          <TabsContent value="cost-centers" className="space-y-4">
+            <div className="flex justify-end">
+              <Button
+                onClick={() => {
+                  setSelectedCostCenter(null);
+                  setCostCenterFormOpen(true);
+                }}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Cost Center
+              </Button>
+            </div>
             <DataTable
-              columns={voucherColumns}
-              data={vouchersQuery.data?.items ?? []}
-              isLoading={vouchersQuery.isLoading}
+              columns={costCenterColumns}
+              data={costCenters}
+              isLoading={costCentersQuery.isLoading}
               search={search}
               onSearchChange={setSearch}
-              emptyTitle="No vouchers found"
-              emptyDescription="Receipts, payments, and journals will appear here."
+              emptyTitle="No cost centers found"
+              emptyDescription="Create cost centers for department-wise accounting."
             />
           </TabsContent>
 
-          <TabsContent value="ledger" className="mt-4 space-y-4">
+          <TabsContent value="journals" className="space-y-4">
+            <div className="flex justify-end">
+              <Button onClick={() => setJournalFormOpen(true)}>
+                <Plus className="mr-2 h-4 w-4" />
+                New Journal Entry
+              </Button>
+            </div>
             <DataTable
-              columns={ledgerColumns}
-              data={ledgerQuery.data?.items ?? []}
-              isLoading={ledgerQuery.isLoading}
+              columns={journalColumns}
+              data={journalEntriesQuery.data?.items ?? []}
+              isLoading={journalEntriesQuery.isLoading}
               search={search}
               onSearchChange={setSearch}
-              emptyTitle="No ledger entries found"
-              emptyDescription="Posted vouchers will appear in the general ledger."
+              emptyTitle="No journal entries found"
+              emptyDescription="Balanced journal entries will appear here."
             />
           </TabsContent>
         </Tabs>
@@ -290,12 +431,11 @@ export default function FinancePage() {
           }}
           title={selectedAccount ? "Edit Account" : "Add Account"}
           description="Create or update chart of accounts."
-          size="md"
+          size="lg"
         >
           <AccountForm
-            defaultValues={
-              selectedAccount ? accountToFormValues(selectedAccount) : undefined
-            }
+            accounts={accounts}
+            defaultValues={selectedAccount ? accountToFormValues(selectedAccount) : undefined}
             isSubmitting={createAccount.isPending || updateAccount.isPending}
             onSubmit={handleAccountSubmit}
             onCancel={() => {
@@ -306,16 +446,40 @@ export default function FinancePage() {
         </FormDrawer>
 
         <FormDrawer
-          open={voucherFormOpen}
-          onOpenChange={setVoucherFormOpen}
-          title="New Voucher"
-          description="Create receipt, payment, or journal voucher."
-          size="md"
+          open={costCenterFormOpen}
+          onOpenChange={(open) => {
+            setCostCenterFormOpen(open);
+            if (!open) setSelectedCostCenter(null);
+          }}
+          title={selectedCostCenter ? "Edit Cost Center" : "Add Cost Center"}
+          description="Create department or operational cost centers."
+          size="lg"
         >
-          <VoucherForm
-            isSubmitting={createVoucher.isPending}
-            onSubmit={handleVoucherSubmit}
-            onCancel={() => setVoucherFormOpen(false)}
+          <CostCenterForm
+            departments={departments}
+            defaultValues={selectedCostCenter ? costCenterToFormValues(selectedCostCenter) : undefined}
+            isSubmitting={createCostCenter.isPending || updateCostCenter.isPending}
+            onSubmit={handleCostCenterSubmit}
+            onCancel={() => {
+              setCostCenterFormOpen(false);
+              setSelectedCostCenter(null);
+            }}
+          />
+        </FormDrawer>
+
+        <FormDrawer
+          open={journalFormOpen}
+          onOpenChange={setJournalFormOpen}
+          title="New Journal Entry"
+          description="Create a balanced accounting journal entry."
+          size="wide"
+        >
+          <JournalEntryForm
+            accounts={accounts}
+            costCenters={costCenters}
+            isSubmitting={createJournalEntry.isPending}
+            onSubmit={handleJournalSubmit}
+            onCancel={() => setJournalFormOpen(false)}
           />
         </FormDrawer>
 
@@ -325,8 +489,8 @@ export default function FinancePage() {
           title="Delete account?"
           description={
             deleteAccount
-              ? `This will permanently delete ${deleteAccount.name}.`
-              : "This account will be deleted."
+              ? `This will deactivate ${deleteAccount.name}.`
+              : "This account will be deactivated."
           }
           confirmText="Delete"
           danger
@@ -335,6 +499,25 @@ export default function FinancePage() {
             if (!deleteAccount) return;
             await deleteAccountMutation.mutateAsync(deleteAccount.id);
             setDeleteAccount(null);
+          }}
+        />
+
+        <ConfirmDialog
+          open={Boolean(deleteCostCenter)}
+          onOpenChange={() => setDeleteCostCenter(null)}
+          title="Delete cost center?"
+          description={
+            deleteCostCenter
+              ? `This will deactivate ${deleteCostCenter.name}.`
+              : "This cost center will be deactivated."
+          }
+          confirmText="Delete"
+          danger
+          isLoading={deleteCostCenterMutation.isPending}
+          onConfirm={async () => {
+            if (!deleteCostCenter) return;
+            await deleteCostCenterMutation.mutateAsync(deleteCostCenter.id);
+            setDeleteCostCenter(null);
           }}
         />
       </div>

@@ -1,3 +1,5 @@
+// src/shared/components/enterprise/entity-drawer.tsx
+
 "use client";
 
 import { ReactNode } from "react";
@@ -15,7 +17,7 @@ interface EntityDrawerProps {
   title: string;
   description?: string;
   children: ReactNode;
-  size?: "sm" | "md" | "lg" | "xl";
+  size?: "sm" | "md" | "lg" | "xl" | "2xl" | "4xl" | "6xl" | "wide";
   onOpenChange: (open: boolean) => void;
 }
 
@@ -24,6 +26,10 @@ const sizeClassMap = {
   md: "sm:max-w-xl",
   lg: "sm:max-w-2xl",
   xl: "sm:max-w-4xl",
+  "2xl": "sm:max-w-5xl",
+  "4xl": "sm:max-w-6xl",
+  "6xl": "sm:max-w-7xl",
+  wide: "w-[92vw] max-w-[1400px]",
 };
 
 export function EntityDrawer({
@@ -37,10 +43,7 @@ export function EntityDrawer({
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
-        className={cn(
-          "w-full overflow-y-auto",
-          sizeClassMap[size]
-        )}
+        className={cn("w-full overflow-y-auto", sizeClassMap[size])}
       >
         <SheetHeader>
           <SheetTitle>{title}</SheetTitle>
