@@ -1,4 +1,4 @@
-import { apiClient } from "@/shared/api/api-client";
+import { apiClient } from "@/platform/api/api-client";
 import type { ExecutiveDashboard, ReportDefinition, ReportRunRequest, ReportRunResult } from "../types/executive.types";
 
 export const executiveService = {

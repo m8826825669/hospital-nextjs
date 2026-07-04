@@ -1,95 +1,49 @@
-// src/features/notifications/api/notification.service.ts
-
 import { apiClient } from "@/platform/api/api-client";
 import type {
-  ActivityFilters,
-  ActivityItem,
-  NotificationCenterSummary,
-  NotificationFilters,
+  Announcement,
+  CommunicationMessage,
+  CommunicationTask,
+  NotificationDashboard,
   NotificationItem,
-  TaskFilters,
-  TaskItem,
+  NotificationListParams,
+  PaginatedResponse,
 } from "../types/notification.types";
-import {
-  getMockActivities,
-  getMockNotifications,
-  getMockNotificationSummary,
-  getMockTasks,
-} from "../utils/notification.mock";
 
-const BASE_URL = "/notifications";
+const buildParams = (params?: NotificationListParams) => ({
+  page: params?.page ?? 1,
+  page_size: params?.page_size ?? 20,
+  status: params?.status === "all" ? undefined : params?.status,
+  priority: params?.priority === "all" ? undefined : params?.priority,
+  module: params?.module === "all" ? undefined : params?.module,
+});
 
 export const notificationService = {
-  async listNotifications(
-    filters?: NotificationFilters,
-  ): Promise<NotificationItem[]> {
-    try {
-      const response = await apiClient.get<NotificationItem[]>(BASE_URL, {
-        params: filters,
-      });
-
-      return response.data;
-    } catch {
-      return getMockNotifications();
-    }
+  dashboard: async () => {
+    const { data } = await apiClient.get<NotificationDashboard>("/notifications/dashboard");
+    return data;
   },
-
-  async getSummary(): Promise<NotificationCenterSummary> {
-    try {
-      const response = await apiClient.get<NotificationCenterSummary>(
-        `${BASE_URL}/summary`,
-      );
-
-      return response.data;
-    } catch {
-      return getMockNotificationSummary();
-    }
+  notifications: async (params?: NotificationListParams) => {
+    const { data } = await apiClient.get<PaginatedResponse<NotificationItem>>("/notifications", { params: buildParams(params) });
+    return data;
   },
-
-  async markAsRead(id: string): Promise<void> {
-    await apiClient.post(`${BASE_URL}/${id}/read`);
+  tasks: async (params?: NotificationListParams) => {
+    const { data } = await apiClient.get<PaginatedResponse<CommunicationTask>>("/notifications/tasks", { params: buildParams(params) });
+    return data;
   },
-
-  async markAllAsRead(): Promise<void> {
-    await apiClient.post(`${BASE_URL}/mark-all-read`);
+  messages: async () => {
+    const { data } = await apiClient.get<PaginatedResponse<CommunicationMessage>>("/notifications/messages");
+    return data;
   },
-
-  async archiveNotification(id: string): Promise<void> {
-    await apiClient.post(`${BASE_URL}/${id}/archive`);
+  announcements: async () => {
+    const { data } = await apiClient.get<PaginatedResponse<Announcement>>("/notifications/announcements");
+    return data;
   },
-
-  async listActivities(filters?: ActivityFilters): Promise<ActivityItem[]> {
-    try {
-      const response = await apiClient.get<ActivityItem[]>(
-        `${BASE_URL}/activities`,
-        {
-          params: filters,
-        },
-      );
-
-      return response.data;
-    } catch {
-      return getMockActivities();
-    }
+  markRead: async (id: string) => {
+    const { data } = await apiClient.post<NotificationItem>(`/notifications/${id}/read`);
+    return data;
   },
-
-  async listTasks(filters?: TaskFilters): Promise<TaskItem[]> {
-    try {
-      const response = await apiClient.get<TaskItem[]>(`${BASE_URL}/tasks`, {
-        params: filters,
-      });
-
-      return response.data;
-    } catch {
-      return getMockTasks();
-    }
-  },
-
-  async completeTask(id: string): Promise<void> {
-    await apiClient.post(`${BASE_URL}/tasks/${id}/complete`);
-  },
-
-  async startTask(id: string): Promise<void> {
-    await apiClient.post(`${BASE_URL}/tasks/${id}/start`);
+  markAllRead: async () => {
+    const { data } = await apiClient.post<{ updated: number }>("/notifications/read-all");
+    return data;
   },
 };

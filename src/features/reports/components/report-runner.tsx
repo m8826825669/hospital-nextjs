@@ -22,8 +22,8 @@ export function ReportRunner() {
     defaultValues: { report_key: "executive_summary", date_from: "", date_to: "" },
   });
 
-  const reports = reportsQuery.data ?? [];
-  const categories = useMemo(() => ["all", ...Array.from(new Set(reports.map((r) => r.category)))], [reports]);
+  const reports = useMemo(() => reportsQuery.data ?? [], [reportsQuery.data]);
+  const categories = useMemo(() => ["all", ...Array.from(new Set(reports.map((r) => r.category)))] as string[], [reports]);
   const filteredReports = selectedCategory === "all" ? reports : reports.filter((r) => r.category === selectedCategory);
 
   return (
