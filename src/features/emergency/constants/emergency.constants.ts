@@ -1,42 +1,41 @@
-// src/features/emergency/constants/emergency.constants.ts
-
-export const erSeverityOptions = [
-  { label: "Critical", value: "critical" },
-  { label: "Emergent", value: "emergent" },
-  { label: "Urgent", value: "urgent" },
-  { label: "Semi Urgent", value: "semi_urgent" },
-  { label: "Non Urgent", value: "non_urgent" },
+export const arrivalModeOptions = [
+  { label: "Walk-in", value: "walk_in" },
+  { label: "Ambulance", value: "ambulance" },
+  { label: "Referral", value: "referral" },
+  { label: "Police", value: "police" },
 ];
-
-export const erStatusOptions = [
-  { label: "Arrived", value: "arrived" },
-  { label: "Triaged", value: "triaged" },
-  { label: "In Treatment", value: "in_treatment" },
-  { label: "Under Observation", value: "under_observation" },
-  { label: "Admitted", value: "admitted" },
-  { label: "Discharged", value: "discharged" },
-  { label: "Transferred", value: "transferred" },
-  { label: "Left Without Being Seen", value: "left_without_being_seen" },
-];
-
-export const erDispositionOptions = [
-  { label: "Discharge", value: "discharge" },
-  { label: "Admit to IPD", value: "admit_ipd" },
-  { label: "Transfer", value: "transfer" },
-  { label: "Death", value: "death" },
-  { label: "Left Against Medical Advice", value: "left_against_medical_advice" },
-];
-
-export const emergencyOrderTypeOptions = [
-  { label: "Lab", value: "lab" },
-  { label: "Radiology", value: "radiology" },
-  { label: "Medication", value: "medication" },
-  { label: "Procedure", value: "procedure" },
-  { label: "Observation", value: "observation" },
-];
-
-export const emergencyOrderPriorityOptions = [
+export const emergencyPriorityOptions = [
   { label: "Routine", value: "routine" },
   { label: "Urgent", value: "urgent" },
   { label: "STAT", value: "stat" },
+];
+export const emergencyStatusOptions = [
+  { label: "Registered", value: "registered" },
+  { label: "Triaged", value: "triaged" },
+  { label: "In Treatment", value: "in_treatment" },
+  { label: "Observation", value: "observation" },
+  { label: "Admitted", value: "admitted" },
+  { label: "Discharged", value: "discharged" },
+  { label: "Transferred", value: "transferred" },
+  { label: "Cancelled", value: "cancelled" },
+];
+export const acuityOptions = [
+  { label: "Resuscitation", value: "resuscitation" },
+  { label: "Emergent", value: "emergent" },
+  { label: "Urgent", value: "urgent" },
+  { label: "Less Urgent", value: "less_urgent" },
+  { label: "Non-Urgent", value: "non_urgent" },
+];
+export const orderTypeOptions = [
+  { label: "Laboratory", value: "lab" },
+  { label: "Radiology", value: "radiology" },
+  { label: "Medication", value: "medication" },
+  { label: "Procedure", value: "procedure" },
+  { label: "Nursing", value: "nursing" },
+];
+export const orderStatusOptions = [
+  { label: "Ordered", value: "ordered" },
+  { label: "In Progress", value: "in_progress" },
+  { label: "Completed", value: "completed" },
+  { label: "Cancelled", value: "cancelled" },
 ];

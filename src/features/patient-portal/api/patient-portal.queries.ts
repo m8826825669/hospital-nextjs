@@ -1,82 +1,42 @@
-// src/features/patient-portal/api/patient-portal.queries.ts
-
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { toast } from "sonner";
-
-import { queryKeys } from "@/platform/api/query-keys";
-import { getApiErrorMessage } from "@/platform/api/api-error";
+import { useQuery } from "@tanstack/react-query";
 import { patientPortalService } from "./patient-portal.service";
-import type { PatientPortalListParams } from "../types/patient-portal.types";
-import type { PatientPortalProfileFormValues } from "../schemas/patient-portal.schema";
 
-export function usePatientPortalKpis() {
+const keys = {
+  all: ["patient-portal"] as const,
+  dashboard: (patientId: string) => ["patient-portal", "dashboard", patientId] as const,
+  appointments: (patientId: string) => ["patient-portal", "appointments", patientId] as const,
+  reports: (patientId: string) => ["patient-portal", "reports", patientId] as const,
+  bills: (patientId: string) => ["patient-portal", "bills", patientId] as const,
+};
+
+export function usePatientPortalDashboard(patientId?: string) {
   return useQuery({
-    queryKey: queryKeys.patientPortal.kpis,
-    queryFn: () => patientPortalService.getKpis(),
+    queryKey: keys.dashboard(patientId ?? ""),
+    queryFn: () => patientPortalService.dashboard(patientId ?? ""),
+    enabled: Boolean(patientId),
   });
 }
 
-export function usePatientPortalProfile() {
+export function usePatientPortalAppointments(patientId?: string) {
   return useQuery({
-    queryKey: queryKeys.patientPortal.profile,
-    queryFn: () => patientPortalService.getProfile(),
+    queryKey: keys.appointments(patientId ?? ""),
+    queryFn: () => patientPortalService.appointments(patientId ?? ""),
+    enabled: Boolean(patientId),
   });
 }
 
-export function useUpdatePatientPortalProfile() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (payload: PatientPortalProfileFormValues) =>
-      patientPortalService.updateProfile(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.patientPortal.profile,
-      });
-      toast.success("Profile updated");
-    },
-    onError: (error) => toast.error(getApiErrorMessage(error)),
+export function usePatientPortalReports(patientId?: string) {
+  return useQuery({
+    queryKey: keys.reports(patientId ?? ""),
+    queryFn: () => patientPortalService.reports(patientId ?? ""),
+    enabled: Boolean(patientId),
   });
 }
 
-export function usePortalAppointments(params: PatientPortalListParams) {
+export function usePatientPortalBills(patientId?: string) {
   return useQuery({
-    queryKey: queryKeys.patientPortal.appointments.list(params),
-    queryFn: () => patientPortalService.listAppointments(params),
-  });
-}
-
-export function usePortalPrescriptions(params: PatientPortalListParams) {
-  return useQuery({
-    queryKey: queryKeys.patientPortal.prescriptions.list(params),
-    queryFn: () => patientPortalService.listPrescriptions(params),
-  });
-}
-
-export function usePortalLabReports(params: PatientPortalListParams) {
-  return useQuery({
-    queryKey: queryKeys.patientPortal.labReports.list(params),
-    queryFn: () => patientPortalService.listLabReports(params),
-  });
-}
-
-export function usePortalRadiologyReports(params: PatientPortalListParams) {
-  return useQuery({
-    queryKey: queryKeys.patientPortal.radiologyReports.list(params),
-    queryFn: () => patientPortalService.listRadiologyReports(params),
-  });
-}
-
-export function usePortalBills(params: PatientPortalListParams) {
-  return useQuery({
-    queryKey: queryKeys.patientPortal.bills.list(params),
-    queryFn: () => patientPortalService.listBills(params),
-  });
-}
-
-export function usePortalInsuranceClaims(params: PatientPortalListParams) {
-  return useQuery({
-    queryKey: queryKeys.patientPortal.claims.list(params),
-    queryFn: () => patientPortalService.listClaims(params),
+    queryKey: keys.bills(patientId ?? ""),
+    queryFn: () => patientPortalService.bills(patientId ?? ""),
+    enabled: Boolean(patientId),
   });
 }

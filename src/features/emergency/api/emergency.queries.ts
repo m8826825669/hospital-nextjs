@@ -1,144 +1,26 @@
-// src/features/emergency/api/emergency.queries.ts
-
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-
-import { queryKeys } from "@/platform/api/query-keys";
 import { getApiErrorMessage } from "@/platform/api/api-error";
 import { emergencyService } from "./emergency.service";
-import type {
-  EmergencyListParams,
-  ErEncounterStatus,
-} from "../types/emergency.types";
-import type {
-  EmergencyDispositionFormValues,
-  EmergencyEncounterFormValues,
-  EmergencyOrderFormValues,
-} from "../schemas/emergency.schema";
+import type { EmergencyListParams } from "../types/emergency.types";
+import type { EmergencyNoteFormValues, EmergencyOrderFormValues, EmergencyTriageFormValues, EmergencyVisitFormValues } from "../schemas/emergency.schema";
 
-export function useEmergencyEncounters(params: EmergencyListParams) {
-  return useQuery({
-    queryKey: queryKeys.emergency.encounters.list(params),
-    queryFn: () => emergencyService.listEncounters(params),
-  });
-}
-
-export function useCreateEmergencyEncounter() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (payload: EmergencyEncounterFormValues) =>
-      emergencyService.createEncounter(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.emergency.encounters.all,
-      });
-      toast.success("Emergency encounter created");
-    },
-    onError: (error) => toast.error(getApiErrorMessage(error)),
-  });
-}
-
-export function useUpdateEmergencyEncounter() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: string;
-      payload: EmergencyEncounterFormValues;
-    }) => emergencyService.updateEncounter(id, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.emergency.encounters.all,
-      });
-      toast.success("Emergency encounter updated");
-    },
-    onError: (error) => toast.error(getApiErrorMessage(error)),
-  });
-}
-
-export function useDeleteEmergencyEncounter() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (id: string) => emergencyService.deleteEncounter(id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.emergency.encounters.all,
-      });
-      toast.success("Emergency encounter deleted");
-    },
-    onError: (error) => toast.error(getApiErrorMessage(error)),
-  });
-}
-
-export function useUpdateEmergencyStatus() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ id, status }: { id: string; status: ErEncounterStatus }) =>
-      emergencyService.updateStatus(id, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.emergency.encounters.all,
-      });
-      toast.success("Emergency status updated");
-    },
-    onError: (error) => toast.error(getApiErrorMessage(error)),
-  });
-}
-
-export function useSaveEmergencyDisposition() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({
-      id,
-      payload,
-    }: {
-      id: string;
-      payload: EmergencyDispositionFormValues;
-    }) => emergencyService.saveDisposition(id, payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: queryKeys.emergency.encounters.all,
-      });
-      toast.success("Disposition saved");
-    },
-    onError: (error) => toast.error(getApiErrorMessage(error)),
-  });
-}
-
-export function useEmergencyOrders(params: EmergencyListParams) {
-  return useQuery({
-    queryKey: queryKeys.emergency.orders.list(params),
-    queryFn: () => emergencyService.listOrders(params),
-  });
-}
-
-export function useCreateEmergencyOrder() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: (payload: EmergencyOrderFormValues) =>
-      emergencyService.createOrder(payload),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.emergency.orders.all });
-      toast.success("Emergency order created");
-    },
-    onError: (error) => toast.error(getApiErrorMessage(error)),
-  });
-}
-
-export function useEmergencyTimeline(id?: string) {
-  return useQuery({
-    queryKey: id
-      ? queryKeys.emergency.encounters.timeline(id)
-      : ["emergency", "timeline", "empty"],
-    queryFn: () => emergencyService.getTimeline(id!),
-    enabled: Boolean(id),
-  });
-}
+const emergencyKeys = {
+  all: ["emergency"] as const,
+  dashboard: ["emergency", "dashboard"] as const,
+  visits: { all: ["emergency", "visits"] as const, list: (p: EmergencyListParams) => ["emergency", "visits", p] as const },
+  triage: { all: ["emergency", "triage"] as const, list: (p: EmergencyListParams) => ["emergency", "triage", p] as const },
+  notes: { all: ["emergency", "notes"] as const, list: (p: EmergencyListParams) => ["emergency", "notes", p] as const },
+  orders: { all: ["emergency", "orders"] as const, list: (p: EmergencyListParams) => ["emergency", "orders", p] as const },
+};
+export function useEmergencyDashboard() { return useQuery({ queryKey: emergencyKeys.dashboard, queryFn: emergencyService.dashboard }); }
+export function useEmergencyVisits(params: EmergencyListParams) { return useQuery({ queryKey: emergencyKeys.visits.list(params), queryFn: () => emergencyService.listVisits(params) }); }
+export function useEmergencyTriages(params: EmergencyListParams) { return useQuery({ queryKey: emergencyKeys.triage.list(params), queryFn: () => emergencyService.listTriages(params) }); }
+export function useEmergencyNotes(params: EmergencyListParams) { return useQuery({ queryKey: emergencyKeys.notes.list(params), queryFn: () => emergencyService.listNotes(params) }); }
+export function useEmergencyOrders(params: EmergencyListParams) { return useQuery({ queryKey: emergencyKeys.orders.list(params), queryFn: () => emergencyService.listOrders(params) }); }
+export function useCreateEmergencyVisit() { const qc = useQueryClient(); return useMutation({ mutationFn: (payload: EmergencyVisitFormValues) => emergencyService.createVisit(payload), onSuccess: () => { qc.invalidateQueries({ queryKey: emergencyKeys.visits.all }); qc.invalidateQueries({ queryKey: emergencyKeys.dashboard }); toast.success("Emergency visit registered"); }, onError: (e) => toast.error(getApiErrorMessage(e)) }); }
+export function useUpdateEmergencyVisitStatus() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ id, status }: { id: string; status: string }) => emergencyService.updateVisitStatus(id, { status }), onSuccess: () => { qc.invalidateQueries({ queryKey: emergencyKeys.visits.all }); qc.invalidateQueries({ queryKey: emergencyKeys.dashboard }); toast.success("Visit status updated"); }, onError: (e) => toast.error(getApiErrorMessage(e)) }); }
+export function useCreateEmergencyTriage() { const qc = useQueryClient(); return useMutation({ mutationFn: (payload: EmergencyTriageFormValues) => emergencyService.createTriage(payload), onSuccess: () => { qc.invalidateQueries({ queryKey: emergencyKeys.triage.all }); qc.invalidateQueries({ queryKey: emergencyKeys.visits.all }); qc.invalidateQueries({ queryKey: emergencyKeys.dashboard }); toast.success("Triage saved"); }, onError: (e) => toast.error(getApiErrorMessage(e)) }); }
+export function useCreateEmergencyNote() { const qc = useQueryClient(); return useMutation({ mutationFn: (payload: EmergencyNoteFormValues) => emergencyService.createNote(payload), onSuccess: () => { qc.invalidateQueries({ queryKey: emergencyKeys.notes.all }); toast.success("ER note saved"); }, onError: (e) => toast.error(getApiErrorMessage(e)) }); }
+export function useCreateEmergencyOrder() { const qc = useQueryClient(); return useMutation({ mutationFn: (payload: EmergencyOrderFormValues) => emergencyService.createOrder(payload), onSuccess: () => { qc.invalidateQueries({ queryKey: emergencyKeys.orders.all }); qc.invalidateQueries({ queryKey: emergencyKeys.dashboard }); toast.success("ER order created"); }, onError: (e) => toast.error(getApiErrorMessage(e)) }); }
+export function useUpdateEmergencyOrderStatus() { const qc = useQueryClient(); return useMutation({ mutationFn: ({ id, status }: { id: string; status: string }) => emergencyService.updateOrderStatus(id, status), onSuccess: () => { qc.invalidateQueries({ queryKey: emergencyKeys.orders.all }); qc.invalidateQueries({ queryKey: emergencyKeys.dashboard }); toast.success("Order status updated"); }, onError: (e) => toast.error(getApiErrorMessage(e)) }); }

@@ -45,9 +45,9 @@ export function PatientProfileForm({
   useEffect(() => {
     if (profile) {
       form.reset({
-        full_name: profile.full_name,
+        full_name: profile.full_name ?? `${profile.first_name} ${profile.last_name ?? ""}`.trim(),
         email: profile.email ?? "",
-        phone: profile.phone ?? "",
+        phone: profile.phone ?? profile.mobile ?? "",
         gender: profile.gender ?? "",
         date_of_birth: profile.date_of_birth ?? "",
         address: profile.address ?? "",

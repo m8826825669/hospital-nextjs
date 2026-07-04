@@ -1,408 +1,113 @@
 // src/app/emergency/page.tsx
-
 "use client";
 
 import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { Activity, Ambulance, ClipboardList, FileText, HeartPulse, Plus, Stethoscope } from "lucide-react";
 import type { ColumnDef } from "@tanstack/react-table";
 
 import { Button } from "@/components/ui/button";
-import {
-  ActionMenu,
-  ConfirmDialog,
-  DataTable,
-  FormDrawer,
-  PageHeader,
-} from "@/shared/components/enterprise";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { DataTable, FormDrawer, PageHeader } from "@/shared/components/enterprise";
 import { AppShell } from "@/shared/components/layout/app-shell";
 
-import { ErSeverityBadge, ErStatusBadge } from "@/features/emergency/components/emergency-badges";
-import { EmergencyDispositionForm } from "@/features/emergency/components/emergency-disposition-form";
-import { EmergencyEncounterForm } from "@/features/emergency/components/emergency-encounter-form";
+import { AcuityBadge, EmergencyPriorityBadge, EmergencyStatusBadge } from "@/features/emergency/components/emergency-badges";
+import { EmergencyNoteForm } from "@/features/emergency/components/emergency-note-form";
 import { EmergencyOrderForm } from "@/features/emergency/components/emergency-order-form";
-import { EmergencyWorkspaceDrawer } from "@/features/emergency/components/emergency-workspace-drawer";
-
+import { EmergencyTriageForm } from "@/features/emergency/components/emergency-triage-form";
+import { EmergencyVisitForm } from "@/features/emergency/components/emergency-visit-form";
 import {
-  useCreateEmergencyEncounter,
+  useCreateEmergencyNote,
   useCreateEmergencyOrder,
-  useDeleteEmergencyEncounter,
-  useEmergencyEncounters,
+  useCreateEmergencyTriage,
+  useCreateEmergencyVisit,
+  useEmergencyDashboard,
+  useEmergencyNotes,
   useEmergencyOrders,
-  useSaveEmergencyDisposition,
-  useUpdateEmergencyEncounter,
-  useUpdateEmergencyStatus,
+  useEmergencyTriages,
+  useEmergencyVisits,
 } from "@/features/emergency/api/emergency.queries";
+import type { EmergencyNote, EmergencyOrder, EmergencyTriage, EmergencyVisit } from "@/features/emergency/types/emergency.types";
+import type { EmergencyNoteFormValues, EmergencyOrderFormValues, EmergencyTriageFormValues, EmergencyVisitFormValues } from "@/features/emergency/schemas/emergency.schema";
 
-import type {
-  EmergencyEncounter,
-  EmergencyOrder,
-  ErEncounterStatus,
-  ErSeverity,
-} from "@/features/emergency/types/emergency.types";
-import type {
-  EmergencyDispositionFormValues,
-  EmergencyEncounterFormValues,
-  EmergencyOrderFormValues,
-} from "@/features/emergency/schemas/emergency.schema";
+function formatDateTime(value?: string | null) {
+  if (!value) return "-";
+  return new Intl.DateTimeFormat("en-IN", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }).format(new Date(value));
+}
 
-function encounterToFormValues(
-  encounter: EmergencyEncounter
-): Partial<EmergencyEncounterFormValues> {
-  return {
-    patient_id: encounter.patient_id,
-    arrival_time: encounter.arrival_time,
-    chief_complaint: encounter.chief_complaint,
-    severity: encounter.severity,
-    doctor_id: encounter.doctor_id ?? "",
-    bed_number: encounter.bed_number ?? "",
-    triage_notes: encounter.triage_notes ?? "",
-    vitals_summary: encounter.vitals_summary ?? "",
-  };
+function StatCard({ title, value, description, icon: Icon }: { title: string; value: string | number; description: string; icon: typeof Ambulance }) {
+  return <div className="rounded-xl border bg-card p-5 shadow-sm"><div className="flex items-start justify-between gap-3"><div><p className="text-sm text-muted-foreground">{title}</p><p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p><p className="mt-1 text-xs text-muted-foreground">{description}</p></div><div className="rounded-lg bg-muted p-2 text-muted-foreground"><Icon className="h-5 w-5" /></div></div></div>;
 }
 
 export default function EmergencyPage() {
   const [search, setSearch] = useState("");
-  const [severity, setSeverity] = useState("");
-  const [status, setStatus] = useState("");
+  const [visitOpen, setVisitOpen] = useState(false);
+  const [triageOpen, setTriageOpen] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [orderOpen, setOrderOpen] = useState(false);
+  const params = useMemo(() => ({ page: 1, size: 100, search: search || undefined }), [search]);
 
-  const [selectedEncounter, setSelectedEncounter] =
-    useState<EmergencyEncounter | null>(null);
-  const [selectedEncounterId, setSelectedEncounterId] = useState("");
-
-  const [encounterFormOpen, setEncounterFormOpen] = useState(false);
-  const [orderFormOpen, setOrderFormOpen] = useState(false);
-  const [dispositionFormOpen, setDispositionFormOpen] = useState(false);
-  const [workspaceOpen, setWorkspaceOpen] = useState(false);
-  const [deleteEncounter, setDeleteEncounter] =
-    useState<EmergencyEncounter | null>(null);
-
-  const params = useMemo(
-    () => ({
-      page: 1,
-      size: 100,
-      search: search || undefined,
-      severity: severity ? (severity as ErSeverity) : undefined,
-      status: status ? (status as ErEncounterStatus) : undefined,
-    }),
-    [search, severity, status]
-  );
-
-  const orderParams = useMemo(
-    () => ({
-      page: 1,
-      size: 100,
-      search: search || undefined,
-    }),
-    [search]
-  );
-
-  const encountersQuery = useEmergencyEncounters(params);
-  const ordersQuery = useEmergencyOrders(orderParams);
-
-  const createEncounter = useCreateEmergencyEncounter();
-  const updateEncounter = useUpdateEmergencyEncounter();
-  const deleteEncounterMutation = useDeleteEmergencyEncounter();
-  const updateStatus = useUpdateEmergencyStatus();
-
+  const dashboardQuery = useEmergencyDashboard();
+  const visitsQuery = useEmergencyVisits(params);
+  const triagesQuery = useEmergencyTriages({ page: 1, size: 100 });
+  const notesQuery = useEmergencyNotes({ page: 1, size: 100 });
+  const ordersQuery = useEmergencyOrders({ page: 1, size: 100 });
+  const createVisit = useCreateEmergencyVisit();
+  const createTriage = useCreateEmergencyTriage();
+  const createNote = useCreateEmergencyNote();
   const createOrder = useCreateEmergencyOrder();
-  const saveDisposition = useSaveEmergencyDisposition();
+  const dashboard = dashboardQuery.data;
 
-  const encounterColumns: ColumnDef<EmergencyEncounter>[] = [
-    { accessorKey: "encounter_number", header: "Encounter" },
-    {
-      accessorKey: "patient_name",
-      header: "Patient",
-      cell: ({ row }) => (
-        <div>
-          <p className="font-medium">{row.original.patient_name}</p>
-          <p className="text-xs text-muted-foreground">
-            {row.original.patient_uhid || "-"}
-          </p>
-        </div>
-      ),
-    },
-    { accessorKey: "arrival_time", header: "Arrival" },
+  const visitColumns: ColumnDef<EmergencyVisit>[] = [
+    { accessorKey: "visit_number", header: "Visit" },
+    { accessorKey: "patient_id", header: "Patient" },
+    { accessorKey: "arrival_time", header: "Arrival", cell: ({ row }) => formatDateTime(row.original.arrival_time) },
     { accessorKey: "chief_complaint", header: "Chief Complaint" },
-    {
-      accessorKey: "severity",
-      header: "Severity",
-      cell: ({ row }) => <ErSeverityBadge severity={row.original.severity} />,
-    },
-    {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => <ErStatusBadge status={row.original.status} />,
-    },
-    {
-      id: "actions",
-      cell: ({ row }) => (
-        <ActionMenu
-          items={[
-            {
-              label: "Open Workspace",
-              onClick: () => {
-                setSelectedEncounter(row.original);
-                setWorkspaceOpen(true);
-              },
-            },
-            {
-              label: "Edit Encounter",
-              onClick: () => {
-                setSelectedEncounter(row.original);
-                setEncounterFormOpen(true);
-              },
-            },
-            {
-              label: "Start Treatment",
-              onClick: () =>
-                updateStatus.mutate({
-                  id: row.original.id,
-                  status: "in_treatment",
-                }),
-            },
-            {
-              label: "Observation",
-              onClick: () =>
-                updateStatus.mutate({
-                  id: row.original.id,
-                  status: "under_observation",
-                }),
-            },
-            {
-              label: "Create Order",
-              onClick: () => {
-                setSelectedEncounterId(row.original.id);
-                setOrderFormOpen(true);
-              },
-            },
-            {
-              label: "Disposition",
-              onClick: () => {
-                setSelectedEncounter(row.original);
-                setDispositionFormOpen(true);
-              },
-            },
-            {
-              label: "Delete",
-              danger: true,
-              onClick: () => setDeleteEncounter(row.original),
-            },
-          ]}
-        />
-      ),
-    },
+    { accessorKey: "priority", header: "Priority", cell: ({ row }) => <EmergencyPriorityBadge priority={row.original.priority} /> },
+    { accessorKey: "status", header: "Status", cell: ({ row }) => <EmergencyStatusBadge status={row.original.status} /> },
+    { accessorKey: "disposition", header: "Disposition" },
   ];
-
+  const triageColumns: ColumnDef<EmergencyTriage>[] = [
+    { accessorKey: "visit_id", header: "Visit" },
+    { accessorKey: "triage_time", header: "Triage Time", cell: ({ row }) => formatDateTime(row.original.triage_time) },
+    { accessorKey: "acuity_level", header: "Acuity", cell: ({ row }) => <AcuityBadge acuity={row.original.acuity_level} /> },
+    { accessorKey: "pain_score", header: "Pain" },
+    { accessorKey: "pulse", header: "Pulse" },
+    { accessorKey: "spo2", header: "SpO2" },
+    { id: "bp", header: "BP", cell: ({ row }) => row.original.systolic_bp && row.original.diastolic_bp ? `${row.original.systolic_bp}/${row.original.diastolic_bp}` : "-" },
+  ];
+  const noteColumns: ColumnDef<EmergencyNote>[] = [
+    { accessorKey: "visit_id", header: "Visit" },
+    { accessorKey: "note_time", header: "Time", cell: ({ row }) => formatDateTime(row.original.note_time) },
+    { accessorKey: "note_type", header: "Type" },
+    { accessorKey: "assessment", header: "Assessment" },
+    { accessorKey: "plan", header: "Plan" },
+  ];
   const orderColumns: ColumnDef<EmergencyOrder>[] = [
+    { accessorKey: "visit_id", header: "Visit" },
     { accessorKey: "order_type", header: "Type" },
     { accessorKey: "order_name", header: "Order" },
-    { accessorKey: "priority", header: "Priority" },
-    { accessorKey: "status", header: "Status" },
-    { accessorKey: "ordered_at", header: "Ordered At" },
+    { accessorKey: "priority", header: "Priority", cell: ({ row }) => <EmergencyPriorityBadge priority={row.original.priority} /> },
+    { accessorKey: "ordered_at", header: "Ordered", cell: ({ row }) => formatDateTime(row.original.ordered_at) },
+    { accessorKey: "status", header: "Status", cell: ({ row }) => <EmergencyStatusBadge status={row.original.status} /> },
   ];
 
-  async function handleEncounterSubmit(values: EmergencyEncounterFormValues) {
-    if (selectedEncounter) {
-      await updateEncounter.mutateAsync({
-        id: selectedEncounter.id,
-        payload: values,
-      });
-    } else {
-      await createEncounter.mutateAsync(values);
-    }
+  async function handleVisitSubmit(values: EmergencyVisitFormValues) { await createVisit.mutateAsync(values); setVisitOpen(false); }
+  async function handleTriageSubmit(values: EmergencyTriageFormValues) { await createTriage.mutateAsync(values); setTriageOpen(false); }
+  async function handleNoteSubmit(values: EmergencyNoteFormValues) { await createNote.mutateAsync(values); setNoteOpen(false); }
+  async function handleOrderSubmit(values: EmergencyOrderFormValues) { await createOrder.mutateAsync(values); setOrderOpen(false); }
 
-    setEncounterFormOpen(false);
-    setSelectedEncounter(null);
-  }
-
-  async function handleOrderSubmit(values: EmergencyOrderFormValues) {
-    await createOrder.mutateAsync(values);
-    setOrderFormOpen(false);
-    setSelectedEncounterId("");
-  }
-
-  async function handleDispositionSubmit(values: EmergencyDispositionFormValues) {
-    if (!selectedEncounter) return;
-
-    await saveDisposition.mutateAsync({
-      id: selectedEncounter.id,
-      payload: values,
-    });
-
-    setDispositionFormOpen(false);
-    setSelectedEncounter(null);
-  }
-
-  return (
-    <AppShell>
-      <div className="space-y-6">
-        <PageHeader
-          title="Emergency Department"
-          description="Manage ER arrivals, triage, severity, trauma workflow, emergency orders, observation, and disposition."
-          actions={
-            <Button
-              onClick={() => {
-                setSelectedEncounter(null);
-                setEncounterFormOpen(true);
-              }}
-            >
-              <Plus className="mr-2 h-4 w-4" />
-              New ER Encounter
-            </Button>
-          }
-        />
-
-        <div className="grid gap-4 rounded-xl border bg-card p-4 md:grid-cols-3">
-          <input
-            className="h-10 rounded-md border bg-background px-3 text-sm"
-            placeholder="Search ER records..."
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-
-          <select
-            className="h-10 rounded-md border bg-background px-3 text-sm"
-            value={severity}
-            onChange={(event) => setSeverity(event.target.value)}
-          >
-            <option value="">All Severity</option>
-            <option value="critical">Critical</option>
-            <option value="emergent">Emergent</option>
-            <option value="urgent">Urgent</option>
-            <option value="semi_urgent">Semi Urgent</option>
-            <option value="non_urgent">Non Urgent</option>
-          </select>
-
-          <select
-            className="h-10 rounded-md border bg-background px-3 text-sm"
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
-          >
-            <option value="">All Status</option>
-            <option value="arrived">Arrived</option>
-            <option value="triaged">Triaged</option>
-            <option value="in_treatment">In Treatment</option>
-            <option value="under_observation">Under Observation</option>
-            <option value="admitted">Admitted</option>
-            <option value="discharged">Discharged</option>
-            <option value="transferred">Transferred</option>
-          </select>
-        </div>
-
-        <DataTable
-          columns={encounterColumns}
-          data={encountersQuery.data?.items ?? []}
-          isLoading={encountersQuery.isLoading}
-          search={search}
-          onSearchChange={setSearch}
-          emptyTitle="No ER encounters found"
-          emptyDescription="Create emergency encounters for triage and treatment."
-        />
-
-        <DataTable
-          columns={orderColumns}
-          data={ordersQuery.data?.items ?? []}
-          isLoading={ordersQuery.isLoading}
-          search={search}
-          onSearchChange={setSearch}
-          emptyTitle="No emergency orders found"
-          emptyDescription="ER labs, radiology, medication, procedure, and observation orders will appear here."
-        />
-
-        <EmergencyWorkspaceDrawer
-          open={workspaceOpen}
-          encounter={selectedEncounter}
-          onOpenChange={(open) => {
-            setWorkspaceOpen(open);
-            if (!open) setSelectedEncounter(null);
-          }}
-        />
-
-        <FormDrawer
-          open={encounterFormOpen}
-          onOpenChange={(open) => {
-            setEncounterFormOpen(open);
-            if (!open) setSelectedEncounter(null);
-          }}
-          title={selectedEncounter ? "Edit ER Encounter" : "New ER Encounter"}
-          description="Create or update emergency encounter and triage details."
-          size="lg"
-        >
-          <EmergencyEncounterForm
-            defaultValues={
-              selectedEncounter
-                ? encounterToFormValues(selectedEncounter)
-                : undefined
-            }
-            isSubmitting={createEncounter.isPending || updateEncounter.isPending}
-            onSubmit={handleEncounterSubmit}
-            onCancel={() => {
-              setEncounterFormOpen(false);
-              setSelectedEncounter(null);
-            }}
-          />
-        </FormDrawer>
-
-        <FormDrawer
-          open={orderFormOpen}
-          onOpenChange={(open) => {
-            setOrderFormOpen(open);
-            if (!open) setSelectedEncounterId("");
-          }}
-          title="Emergency Order"
-          description="Create emergency lab, radiology, medication, procedure, or observation order."
-          size="md"
-        >
-          <EmergencyOrderForm
-            encounterId={selectedEncounterId}
-            isSubmitting={createOrder.isPending}
-            onSubmit={handleOrderSubmit}
-            onCancel={() => {
-              setOrderFormOpen(false);
-              setSelectedEncounterId("");
-            }}
-          />
-        </FormDrawer>
-
-        <FormDrawer
-          open={dispositionFormOpen}
-          onOpenChange={(open) => {
-            setDispositionFormOpen(open);
-            if (!open) setSelectedEncounter(null);
-          }}
-          title="ER Disposition"
-          description="Discharge, admit, transfer, or close ER encounter."
-          size="md"
-        >
-          <EmergencyDispositionForm
-            isSubmitting={saveDisposition.isPending}
-            onSubmit={handleDispositionSubmit}
-            onCancel={() => {
-              setDispositionFormOpen(false);
-              setSelectedEncounter(null);
-            }}
-          />
-        </FormDrawer>
-
-        <ConfirmDialog
-          open={Boolean(deleteEncounter)}
-          onOpenChange={() => setDeleteEncounter(null)}
-          title="Delete ER encounter?"
-          description={
-            deleteEncounter
-              ? `This will permanently delete ${deleteEncounter.encounter_number}.`
-              : "This ER encounter will be deleted."
-          }
-          confirmText="Delete"
-          danger
-          isLoading={deleteEncounterMutation.isPending}
-          onConfirm={async () => {
-            if (!deleteEncounter) return;
-            await deleteEncounterMutation.mutateAsync(deleteEncounter.id);
-            setDeleteEncounter(null);
-          }}
-        />
-      </div>
-    </AppShell>
-  );
+  return <AppShell><div className="space-y-6"><PageHeader title="Emergency Department" description="Manage ER registration, triage, acuity, emergency notes, orders, observation, and disposition." />
+    <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-6"><StatCard title="Active Visits" value={dashboard?.active_visits ?? "-"} description="Currently in ER" icon={Ambulance} /><StatCard title="Waiting Triage" value={dashboard?.waiting_triage ?? "-"} description="Registered patients" icon={ClipboardList} /><StatCard title="Critical" value={dashboard?.critical_patients ?? "-"} description="Resus/emergent" icon={HeartPulse} /><StatCard title="Observation" value={dashboard?.observation_patients ?? "-"} description="Observation bay" icon={Activity} /><StatCard title="Pending Orders" value={dashboard?.pending_orders ?? "-"} description="Open ER orders" icon={Stethoscope} /><StatCard title="Discharged" value={dashboard?.discharged_today ?? "-"} description="Today" icon={FileText} /></div>
+    <input className="h-10 w-full rounded-md border bg-background px-3 text-sm" placeholder="Search emergency records..." value={search} onChange={(e) => setSearch(e.target.value)} />
+    <Tabs defaultValue="visits" className="space-y-4"><TabsList className="flex h-auto w-full flex-wrap justify-start gap-2 rounded-xl bg-muted/40 p-2"><TabsTrigger value="visits">ER Queue</TabsTrigger><TabsTrigger value="triage">Triage</TabsTrigger><TabsTrigger value="orders">Orders</TabsTrigger><TabsTrigger value="notes">ER Notes</TabsTrigger></TabsList>
+      <TabsContent value="visits" className="space-y-4"><Button onClick={() => setVisitOpen(true)}><Plus className="mr-2 h-4 w-4" />Register ER Visit</Button><DataTable columns={visitColumns} data={visitsQuery.data?.items ?? []} isLoading={visitsQuery.isLoading} search={search} onSearchChange={setSearch} emptyTitle="No ER visits" emptyDescription="Emergency visits will appear here." /></TabsContent>
+      <TabsContent value="triage" className="space-y-4"><Button onClick={() => setTriageOpen(true)}><Plus className="mr-2 h-4 w-4" />Record Triage</Button><DataTable columns={triageColumns} data={triagesQuery.data?.items ?? []} isLoading={triagesQuery.isLoading} search={search} onSearchChange={setSearch} emptyTitle="No triage records" emptyDescription="Triage records will appear here." /></TabsContent>
+      <TabsContent value="orders" className="space-y-4"><Button onClick={() => setOrderOpen(true)}><Plus className="mr-2 h-4 w-4" />New ER Order</Button><DataTable columns={orderColumns} data={ordersQuery.data?.items ?? []} isLoading={ordersQuery.isLoading} search={search} onSearchChange={setSearch} emptyTitle="No ER orders" emptyDescription="Emergency orders will appear here." /></TabsContent>
+      <TabsContent value="notes" className="space-y-4"><Button onClick={() => setNoteOpen(true)}><Plus className="mr-2 h-4 w-4" />New ER Note</Button><DataTable columns={noteColumns} data={notesQuery.data?.items ?? []} isLoading={notesQuery.isLoading} search={search} onSearchChange={setSearch} emptyTitle="No ER notes" emptyDescription="Emergency clinical notes will appear here." /></TabsContent>
+    </Tabs>
+    <FormDrawer open={visitOpen} onOpenChange={setVisitOpen} title="Register Emergency Visit" description="Capture arrival details and chief complaint." size="xl"><EmergencyVisitForm isSubmitting={createVisit.isPending} onSubmit={handleVisitSubmit} onCancel={() => setVisitOpen(false)} /></FormDrawer>
+    <FormDrawer open={triageOpen} onOpenChange={setTriageOpen} title="Emergency Triage" description="Record acuity, pain score, and initial vitals." size="xl"><EmergencyTriageForm isSubmitting={createTriage.isPending} onSubmit={handleTriageSubmit} onCancel={() => setTriageOpen(false)} /></FormDrawer>
+    <FormDrawer open={orderOpen} onOpenChange={setOrderOpen} title="Emergency Order" description="Create lab, radiology, medication, or procedure order." size="lg"><EmergencyOrderForm isSubmitting={createOrder.isPending} onSubmit={handleOrderSubmit} onCancel={() => setOrderOpen(false)} /></FormDrawer>
+    <FormDrawer open={noteOpen} onOpenChange={setNoteOpen} title="Emergency Clinical Note" description="Document emergency assessment and plan." size="xl"><EmergencyNoteForm isSubmitting={createNote.isPending} onSubmit={handleNoteSubmit} onCancel={() => setNoteOpen(false)} /></FormDrawer>
+  </div></AppShell>;
 }

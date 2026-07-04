@@ -81,6 +81,12 @@ export const navigationItems = [
     permission: "patient.view",
   },
   {
+    title: "Emergency",
+    href: "/emergency",
+    icon: LayoutDashboard, // Replace with the actual icon for Emergency
+    permission: "emergency.view",
+  },
+  {
     title: "Nursing",
     href: "/nursing",
     icon: Bed, // Replace with the actual icon for Nursing
@@ -133,5 +139,29 @@ export const navigationItems = [
     href: "/insurance",
     icon: ShieldCheck,
     permission: "insurance.view",
+  },
+  {
+    title: "Patient Portal",
+    href: "/patient-portal",
+    icon: Users,
+    permission: "patient-portal.view",
+  },
+  {
+    title: "Doctor Portal",
+    href: "/doctor-portal",
+    icon: Stethoscope,
+    permission: "doctor-portal.view",
+  },
+  {
+    title: "Dental",
+    href: "/dental",
+    icon: Stethoscope,
+    permission: "dental.view",
+  },
+  {
+    title: "Executive",
+    href: "/executive",
+    icon: LayoutDashboard,
+    permission: "executive.view",
   },
 ];
