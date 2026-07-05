@@ -1,0 +1,7 @@
+export interface PageResponse<T> { items: T[]; total: number; page: number; page_size: number; pages: number }
+export interface SchedulingDashboard { total_resources: number; today_bookings: number; active_doctor_schedules: number; staff_on_roster: number; pending_bookings: number; conflicts: number }
+export interface SchedulingListParams { page?: number; size?: number; page_size?: number; status?: string; resource_type?: string }
+export interface HospitalResource { id: string; hospital_id: string; name: string; code: string; resource_type: string; department_id?: string | null; location?: string | null; capacity?: number | null; status: string; description?: string | null; is_active: boolean }
+export interface ResourceBooking { id: string; hospital_id: string; resource_id: string; patient_id?: string | null; doctor_id?: string | null; title: string; booking_type: string; start_time: string; end_time: string; status: string; priority: string; notes?: string | null; created_by: string }
+export interface DoctorSchedule { id: string; hospital_id: string; doctor_id: string; department_id?: string | null; schedule_date: string; start_time: string; end_time: string; slot_minutes: number; location?: string | null; status: string; is_active: boolean }
+export interface StaffRoster { id: string; hospital_id: string; employee_id: string; department_id?: string | null; roster_date: string; shift: string; start_time: string; end_time: string; location?: string | null; status: string }

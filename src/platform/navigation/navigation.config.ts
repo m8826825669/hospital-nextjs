@@ -164,4 +164,24 @@ export const navigationItems = [
     icon: LayoutDashboard,
     permission: "executive.view",
   },
+  {
+  title: "Scheduling",
+  href: "/scheduling",
+  icon: CalendarDays,
+  permission: "scheduling.view",
+  },
+  {
+  title: "Documents",
+  href: "/documents",
+  icon: LayoutDashboard,
+  permission: "documents.view",
+  },
+  
+  {
+  title: "Audit",
+  href: "/audit",
+  icon: LayoutDashboard,
+  permission: "audit.view",
+  },
+  
 ];
