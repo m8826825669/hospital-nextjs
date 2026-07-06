@@ -5,7 +5,7 @@ import { toast } from "sonner";
 
 import { queryKeys } from "@/platform/api/query-keys";
 import { getApiErrorMessage } from "@/platform/api/api-error";
-import { adminService } from "./admin.service";
+import { adminService, DoctorPayload } from "./admin.service";
 
 import type { AdminListParams } from "../types/admin.types";
 import type {
@@ -183,3 +183,51 @@ export function useUpdateHospitalSettings() {
     onError: (error) => toast.error(getApiErrorMessage(error)),
   });
 }
+
+export function useDoctors(params: AdminListParams) {
+  return useQuery({
+    queryKey: queryKeys.admin.doctors.list(params),
+    queryFn: () => adminService.getDoctors(params),
+  });
+}
+
+export function useCreateDoctor() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: DoctorPayload) => adminService.createDoctor(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.doctors.all });
+      toast.success("Doctor created successfully");
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
+}
+
+export function useUpdateDoctor() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: DoctorPayload }) =>
+      adminService.updateDoctor(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.doctors.all });
+      toast.success("Doctor updated successfully");
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
+}
+
+export function useDeleteDoctor() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => adminService.deleteDoctor(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.admin.doctors.all });
+      toast.success("Doctor deleted successfully");
+    },
+    onError: (error) => toast.error(getApiErrorMessage(error)),
+  });
+}
+

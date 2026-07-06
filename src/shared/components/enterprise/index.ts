@@ -7,6 +7,7 @@ export * from "./loading-state";
 export * from "./error-state";
 export * from "./status-badge";
 export * from "./confirm-dialog";
+export * from "./confirm-alert-dialog";
 export * from "./entity-drawer";
 export * from "./action-menu";
 export * from "./search-toolbar";

@@ -19,8 +19,8 @@ export function SimpleTrendCard({
   return (
     <SectionCard title={title} description={description}>
       <div className="space-y-3">
-        {data.map((item) => (
-          <div key={item.label} className="space-y-1">
+        {data.map((item, i) => (
+          <div key={`${item.label}-${i}`} className="space-y-1">
             <div className="flex items-center justify-between text-sm">
               <span className="text-muted-foreground">{item.label}</span>
               <span className="font-medium">{item.value}</span>

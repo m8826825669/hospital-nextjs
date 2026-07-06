@@ -16,6 +16,30 @@ import type {
   WardFormValues,
 } from "../schemas/admin.schema";
 
+export interface ListParams {
+  page?: number;
+  size?: number;
+  search?: string;
+}
+
+export interface DepartmentPayload {
+  name: string;
+  code: string;
+  description?: string | null;
+  active?: boolean;
+}
+
+export interface DoctorPayload {
+  first_name: string;
+  last_name: string;
+  email: string;
+  phone?: string | null;
+  department_id: string;
+  specialization?: string | null;
+  consultation_fee?: number | null;
+  active?: boolean;
+}
+
 export const adminService = {
   async listDepartments(
     params: AdminListParams
@@ -106,5 +130,32 @@ export const adminService = {
       payload
     );
     return response.data;
+  },
+  async getDoctors(params: AdminListParams): Promise<ApiListResponse<DoctorPayload>> {
+    const response = await apiClient.get<ApiListResponse<DoctorPayload>>(
+      "/admin/doctors",
+      { params }
+    );
+    return response.data;
+  },
+  async createDoctor(payload: DoctorPayload): Promise<DoctorPayload> {
+    const response = await apiClient.post<DoctorPayload>(
+      "/admin/doctors",
+      payload
+    );
+    return response.data;
+  },
+  async updateDoctor(
+    id: string,
+    payload: DoctorPayload
+  ): Promise<DoctorPayload> {
+    const response = await apiClient.patch<DoctorPayload>(
+      `/admin/doctors/${id}`,
+      payload
+    );
+    return response.data;
+  },
+  async deleteDoctor(id: string): Promise<void> {
+    await apiClient.delete(`/admin/doctors/${id}`);
   },
 };

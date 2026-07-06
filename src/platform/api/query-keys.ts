@@ -156,10 +156,28 @@ reports: {
 },
 admin: {
   all: ["admin"] as const,
+  hospitalSettings: {
+    all:["admin", "hospital-settings"] as const,
+  },
   departments: {
     all: ["admin", "departments"] as const,
     list: (params: unknown) =>
       ["admin", "departments", "list", params] as const,
+  },
+  doctors: {
+    all: ["admin", "doctors"] as const,
+    list: (params: unknown) =>
+      ["admin", "doctors", "list", params] as const,
+  },
+  users: {
+    all: ["admin", "users"] as const,
+    list: (params: unknown) =>
+      ["admin", "users", "list", params] as const,
+  },
+  roles: {
+    all: ["admin", "roles"] as const,
+    list: (params: unknown) =>
+      ["admin", "roles", "list", params] as const,
   },
   wards: {
     all: ["admin", "wards"] as const,

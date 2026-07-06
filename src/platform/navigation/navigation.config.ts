@@ -183,5 +183,11 @@ export const navigationItems = [
   icon: LayoutDashboard,
   permission: "audit.view",
   },
+  {
+  title: "Administration",
+  href: "/admin",
+  icon: LayoutDashboard,
+  permission: "admin.view",
+  },
   
 ];
