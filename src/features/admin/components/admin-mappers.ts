@@ -19,9 +19,9 @@ export function departmentToFormValues(
 export function wardToFormValues(ward: Ward): Partial<WardFormValues> {
   return {
     name: ward.name,
-    code: ward.code ?? "",
+    ward_type: ward.ward_type ?? "General Ward",
     floor: ward.floor ?? "",
-    is_active: ward.is_active,
+    active: ward.active ?? ward.is_active ?? true,
   };
 }
 
@@ -29,8 +29,8 @@ export function bedToFormValues(bed: Bed): Partial<BedFormValues> {
   return {
     ward_id: bed.ward_id,
     bed_number: bed.bed_number,
-    bed_type: bed.bed_type ?? "",
+    bed_type: bed.bed_type ?? "GENERAL",
     status: bed.status,
-    is_active: bed.is_active,
+    active: bed.active ?? bed.is_active ?? true,
   };
 }

@@ -6,13 +6,19 @@ import type { BedStatus } from "../types/admin.types";
 export function BedStatusBadge({ status }: { status: BedStatus }) {
   const variantMap: Record<
     BedStatus,
-    "success" | "warning" | "danger" | "info"
+    "success" | "warning" | "danger" | "info" | "muted"
   > = {
-    available: "success",
-    occupied: "danger",
-    maintenance: "warning",
-    reserved: "info",
+    AVAILABLE: "success",
+    OCCUPIED: "danger",
+    CLEANING: "warning",
+    MAINTENANCE: "warning",
+    RESERVED: "info",
   };
 
-  return <StatusBadge label={status.toUpperCase()} variant={variantMap[status]} />;
+  const label = status
+    .split("_")
+    .map((part) => part.charAt(0) + part.slice(1).toLowerCase())
+    .join(" ");
+
+  return <StatusBadge label={label} variant={variantMap[status] ?? "muted"} />;
 }

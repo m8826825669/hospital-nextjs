@@ -4,7 +4,7 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: oklch(0.99 0.003 240);
+  --background: oklch(0.985 0.003 240);
   --foreground: oklch(0.17 0.02 240);
 
   --card: oklch(1 0 0);
@@ -13,11 +13,11 @@
   --popover: oklch(1 0 0);
   --popover-foreground: oklch(0.17 0.02 240);
 
-  --primary: oklch(0.22 0.03 240);
-  --primary-foreground: oklch(0.98 0.003 240);
+  --primary: oklch(0.38 0.095 220);
+  --primary-foreground: oklch(0.99 0.003 240);
 
-  --secondary: oklch(0.96 0.006 240);
-  --secondary-foreground: oklch(0.22 0.03 240);
+  --secondary: oklch(0.955 0.025 220);
+  --secondary-foreground: oklch(0.21 0.04 220);
 
   --muted: oklch(0.96 0.006 240);
   --muted-foreground: oklch(0.46 0.02 240);
@@ -39,18 +39,50 @@
 
   --border: oklch(0.9 0.006 240);
   --input: oklch(0.9 0.006 240);
-  --ring: oklch(0.35 0.04 240);
+  --ring: oklch(0.47 0.12 220);
 
-  --radius: 0.75rem;
+  --radius: 0.875rem;
 
-  --sidebar: oklch(0.985 0.003 240);
+  --sidebar: oklch(0.99 0.003 240);
   --sidebar-foreground: oklch(0.2 0.02 240);
-  --sidebar-primary: oklch(0.22 0.03 240);
+  --sidebar-primary: oklch(0.38 0.095 220);
   --sidebar-primary-foreground: oklch(0.98 0.003 240);
-  --sidebar-accent: oklch(0.94 0.008 240);
-  --sidebar-accent-foreground: oklch(0.22 0.03 240);
+  --sidebar-accent: oklch(0.955 0.025 220);
+  --sidebar-accent-foreground: oklch(0.21 0.04 220);
   --sidebar-border: oklch(0.9 0.006 240);
-  --sidebar-ring: oklch(0.35 0.04 240);
+  --sidebar-ring: oklch(0.47 0.12 220);
+
+  /* Sprint A2.1 Enterprise Design Tokens */
+  --enterprise-page-x: clamp(1rem, 2vw, 2rem);
+  --enterprise-page-y: clamp(1rem, 1.6vw, 1.5rem);
+  --enterprise-content-max: 96rem;
+  --enterprise-form-max: 64rem;
+  --enterprise-drawer-width: min(46rem, calc(100vw - 2rem));
+
+  --enterprise-surface-subtle: oklch(0.975 0.006 240);
+  --enterprise-surface-raised: oklch(1 0 0);
+  --enterprise-surface-hover: oklch(0.965 0.012 220);
+  --enterprise-border-soft: oklch(0.92 0.006 240);
+  --enterprise-border-strong: oklch(0.84 0.012 240);
+
+  --enterprise-shadow-xs: 0 1px 2px rgb(15 23 42 / 0.04);
+  --enterprise-shadow-sm: 0 1px 3px rgb(15 23 42 / 0.08), 0 1px 2px rgb(15 23 42 / 0.04);
+  --enterprise-shadow-md: 0 8px 24px rgb(15 23 42 / 0.08);
+  --enterprise-shadow-lg: 0 16px 40px rgb(15 23 42 / 0.1);
+  --enterprise-shadow-drawer: -16px 0 40px rgb(15 23 42 / 0.12);
+
+  --enterprise-font-caption: 0.75rem;
+  --enterprise-font-body-sm: 0.8125rem;
+  --enterprise-font-body: 0.875rem;
+  --enterprise-font-body-lg: 1rem;
+  --enterprise-font-title-sm: 1.125rem;
+  --enterprise-font-title: 1.25rem;
+  --enterprise-font-title-lg: 1.5rem;
+
+  --enterprise-ease: cubic-bezier(0.2, 0, 0, 1);
+  --enterprise-duration-fast: 120ms;
+  --enterprise-duration-normal: 180ms;
+  --enterprise-duration-slow: 240ms;
 }
 
 .dark {
@@ -99,6 +131,17 @@
   --sidebar-accent-foreground: oklch(0.96 0.004 240);
   --sidebar-border: oklch(0.27 0.02 240);
   --sidebar-ring: oklch(0.7 0.08 220);
+
+  --enterprise-surface-subtle: oklch(0.18 0.018 240);
+  --enterprise-surface-raised: oklch(0.16 0.018 240);
+  --enterprise-surface-hover: oklch(0.22 0.02 240);
+  --enterprise-border-soft: oklch(0.27 0.02 240);
+  --enterprise-border-strong: oklch(0.35 0.025 240);
+  --enterprise-shadow-xs: 0 1px 2px rgb(0 0 0 / 0.18);
+  --enterprise-shadow-sm: 0 4px 16px rgb(0 0 0 / 0.22);
+  --enterprise-shadow-md: 0 12px 28px rgb(0 0 0 / 0.28);
+  --enterprise-shadow-lg: 0 20px 48px rgb(0 0 0 / 0.32);
+  --enterprise-shadow-drawer: -16px 0 40px rgb(0 0 0 / 0.34);
 }
 
 @theme inline {
@@ -162,13 +205,88 @@
 
   html {
     scroll-behavior: smooth;
+    text-rendering: optimizeLegibility;
   }
 
   body {
     @apply bg-background text-foreground antialiased;
+    font-size: var(--enterprise-font-body);
   }
 
   button {
     cursor: pointer;
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 18%, transparent);
+  }
+}
+
+@layer components {
+  .enterprise-page {
+    width: 100%;
+    max-width: var(--enterprise-content-max);
+    margin-inline: auto;
+    padding: var(--enterprise-page-y) var(--enterprise-page-x);
+  }
+
+  .enterprise-surface {
+    background: var(--enterprise-surface-raised);
+    border: 1px solid var(--enterprise-border-soft);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--enterprise-shadow-xs);
+  }
+
+  .enterprise-card {
+    background: var(--enterprise-surface-raised);
+    border: 1px solid var(--enterprise-border-soft);
+    border-radius: var(--radius-xl);
+    box-shadow: var(--enterprise-shadow-sm);
+    transition:
+      box-shadow var(--enterprise-duration-normal) var(--enterprise-ease),
+      border-color var(--enterprise-duration-normal) var(--enterprise-ease),
+      transform var(--enterprise-duration-fast) var(--enterprise-ease);
+  }
+
+  .enterprise-card:hover {
+    border-color: var(--enterprise-border-strong);
+    box-shadow: var(--enterprise-shadow-md);
+  }
+
+  .enterprise-panel {
+    background: linear-gradient(180deg, var(--enterprise-surface-raised), var(--enterprise-surface-subtle));
+    border: 1px solid var(--enterprise-border-soft);
+    border-radius: var(--radius-2xl);
+    box-shadow: var(--enterprise-shadow-sm);
+  }
+
+  .enterprise-section-title {
+    font-size: var(--enterprise-font-title-sm);
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    line-height: 1.25;
+  }
+
+  .enterprise-muted-text {
+    color: var(--muted-foreground);
+    font-size: var(--enterprise-font-body-sm);
+    line-height: 1.5;
+  }
+
+  .enterprise-focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+
+  .enterprise-table-shell {
+    overflow: hidden;
+    border: 1px solid var(--enterprise-border-soft);
+    border-radius: var(--radius-xl);
+    background: var(--enterprise-surface-raised);
+    box-shadow: var(--enterprise-shadow-xs);
+  }
+
+  .enterprise-drawer-shell {
+    width: var(--enterprise-drawer-width);
+    box-shadow: var(--enterprise-shadow-drawer);
   }
 }

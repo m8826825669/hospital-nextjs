@@ -11,17 +11,23 @@ export const departmentFormSchema = z.object({
 
 export const wardFormSchema = z.object({
   name: z.string().min(2, "Ward name is required"),
-  code: z.string().optional(),
+  ward_type: z.string().min(2, "Ward type is required"),
   floor: z.string().optional(),
-  is_active: z.boolean().default(true),
+  active: z.boolean().default(true),
 });
 
 export const bedFormSchema = z.object({
-  ward_id: z.string().min(1, "Ward is required"),
+  ward_id: z.string().uuid("Select a valid ward"),
   bed_number: z.string().min(1, "Bed number is required"),
-  bed_type: z.string().optional(),
-  status: z.enum(["available", "occupied", "maintenance", "reserved"]),
-  is_active: z.boolean().default(true),
+  bed_type: z.string().min(1, "Bed type is required"),
+  status: z.enum([
+    "AVAILABLE",
+    "OCCUPIED",
+    "CLEANING",
+    "MAINTENANCE",
+    "RESERVED",
+  ]),
+  active: z.boolean().default(true),
 });
 
 export const hospitalSettingFormSchema = z.object({

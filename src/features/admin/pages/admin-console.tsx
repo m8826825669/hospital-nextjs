@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { ComponentType, useState } from "react";
 import {
   Bed,
   Building2,
@@ -22,17 +22,22 @@ import { BedsTab } from "../components/beds-tab";
 import { DepartmentsTab } from "../components/departments-tab";
 import { SettingsTab } from "../components/settings-tab";
 import { WardsTab } from "../components/wards-tab";
+import { EmployeesTab } from "../components/employees-tab";
+import { DoctorsTab } from "../components/doctors-tab";
+import { UsersTab } from "../components/users-tab";
+import { RolesTab } from "../components/roles-tab";
+import { PermissionsTab } from "../components/permissions-tab";
 
-const adminTabs = [
+const adminTabs: { value: string; label: string; icon: ComponentType<{ className?: string }>; disabled?: boolean }[] = [
   { value: "settings", label: "Settings", icon: Settings },
   { value: "departments", label: "Departments", icon: Building2 },
   { value: "wards", label: "Wards", icon: CalendarDays },
   { value: "beds", label: "Beds", icon: Bed },
-  { value: "doctors", label: "Doctors", icon: Stethoscope, disabled: true },
-  { value: "employees", label: "Employees", icon: Users, disabled: true },
-  { value: "users", label: "Users", icon: UserRoundCog, disabled: true },
-  { value: "roles", label: "Roles", icon: ShieldCheck, disabled: true },
-  { value: "permissions", label: "Permissions", icon: KeyRound, disabled: true },
+  { value: "doctors", label: "Doctors", icon: Stethoscope },
+  { value: "employees", label: "Employees", icon: Users },
+  { value: "users", label: "Users", icon: UserRoundCog },
+  { value: "roles", label: "Roles", icon: ShieldCheck },
+  { value: "permissions", label: "Permissions", icon: KeyRound },
 ];
 
 export function AdminConsole() {
@@ -94,6 +99,26 @@ export function AdminConsole() {
 
           <TabsContent value="beds" className="mt-0">
             <BedsTab search={search} onSearchChange={setSearch} />
+          </TabsContent>
+
+          <TabsContent value="employees" className="mt-0">
+            <EmployeesTab search={search} onSearchChange={setSearch} />
+          </TabsContent>
+
+          <TabsContent value="doctors" className="mt-0">
+            <DoctorsTab search={search} onSearchChange={setSearch} />
+          </TabsContent>
+
+          <TabsContent value="users" className="mt-0">
+            <UsersTab search={search} onSearchChange={setSearch} />
+          </TabsContent>
+
+          <TabsContent value="roles" className="mt-0">
+            <RolesTab search={search} onSearchChange={setSearch} />
+          </TabsContent>
+
+          <TabsContent value="permissions" className="mt-0">
+            <PermissionsTab search={search} onSearchChange={setSearch} />
           </TabsContent>
         </Tabs>
       </div>

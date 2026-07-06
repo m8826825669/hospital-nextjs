@@ -16,6 +16,7 @@ import {
   useCreateBed,
   useDeleteBed,
   useUpdateBed,
+  useWards,
 } from "../api/admin.queries";
 import { BedForm } from "./bed-form";
 import { BedStatusBadge } from "./bed-status-badge";
@@ -45,6 +46,7 @@ export function BedsTab({ search, onSearchChange }: BedsTabProps) {
   );
 
   const bedsQuery = useBeds(params);
+  const wardsQuery = useWards({ page: 1, size: 100, is_active: true });
   const createBed = useCreateBed();
   const updateBed = useUpdateBed();
   const deleteBedMutation = useDeleteBed();
@@ -60,9 +62,9 @@ export function BedsTab({ search, onSearchChange }: BedsTabProps) {
         cell: ({ row }) => <BedStatusBadge status={row.original.status} />,
       },
       {
-        accessorKey: "is_active",
+        accessorKey: "active",
         header: "Active",
-        cell: ({ row }) => (row.original.is_active ? "Yes" : "No"),
+        cell: ({ row }) => (row.original.active ?? row.original.is_active ? "Yes" : "No"),
       },
       {
         id: "actions",
@@ -144,11 +146,14 @@ export function BedsTab({ search, onSearchChange }: BedsTabProps) {
           if (!open) setSelectedBed(null);
         }}
         title={selectedBed ? "Edit Bed" : "Add Bed"}
-        description="Create or update bed master data."
-        size="md"
+        description="Create or update inpatient bed master data."
+        size="lg"
       >
         <BedForm
           defaultValues={selectedBed ? bedToFormValues(selectedBed) : undefined}
+          wards={wardsQuery.data?.items ?? []}
+          isWardsLoading={wardsQuery.isLoading}
+          wardsError={wardsQuery.isError}
           isSubmitting={createBed.isPending || updateBed.isPending}
           onSubmit={handleSubmit}
           onCancel={() => {
