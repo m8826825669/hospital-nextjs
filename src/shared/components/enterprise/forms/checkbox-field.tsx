@@ -24,7 +24,7 @@ export function CheckboxField<T extends FieldValues>({
       render={({ field }) => (
         <FormItem className="flex items-center gap-3 space-y-0 rounded-lg border p-3">
           <Checkbox
-            checked={field.value}
+            checked={field.value ?? false}
             disabled={disabled}
             onCheckedChange={field.onChange}
           />

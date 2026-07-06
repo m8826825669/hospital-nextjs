@@ -167,6 +167,7 @@ export function useHospitalSettings() {
   return useQuery({
     queryKey: queryKeys.admin.settings,
     queryFn: () => adminService.getSettings(),
+    throwOnError: false,
   });
 }
 

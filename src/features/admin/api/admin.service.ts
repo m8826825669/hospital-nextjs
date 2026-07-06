@@ -29,6 +29,22 @@ export interface DepartmentPayload {
   active?: boolean;
 }
 
+
+export interface DemoDataResponse {
+  message: string;
+  default_password?: string;
+  counts: {
+    departments: number;
+    wards: number;
+    beds: number;
+    employees: number;
+    doctors: number;
+    roles: number;
+    permissions: number;
+    users: number;
+  };
+}
+
 export interface DoctorPayload {
   first_name: string;
   last_name: string;
@@ -131,6 +147,13 @@ export const adminService = {
     );
     return response.data;
   },
+  async generateDemoData(): Promise<DemoDataResponse> {
+    const response = await apiClient.post<DemoDataResponse>(
+      "/admin/demo-data"
+    );
+    return response.data;
+  },
+
   async getDoctors(params: AdminListParams): Promise<ApiListResponse<DoctorPayload>> {
     const response = await apiClient.get<ApiListResponse<DoctorPayload>>(
       "/admin/doctors",

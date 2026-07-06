@@ -10,6 +10,7 @@ import {
   ConfirmDialog,
   DataTable,
   FormDrawer,
+  StatusBadge,
 } from "@/shared/components/enterprise";
 import {
   useCreateWard,
@@ -50,13 +51,36 @@ export function WardsTab({ search, onSearchChange }: WardsTabProps) {
 
   const columns = useMemo<ColumnDef<Ward>[]>(
     () => [
-      { accessorKey: "name", header: "Ward" },
-      { accessorKey: "code", header: "Code" },
+      {
+        accessorKey: "name",
+        header: "Ward",
+        cell: ({ row }) => (
+          <div>
+            <div className="font-medium text-foreground">{row.original.name}</div>
+            <div className="text-xs text-muted-foreground">
+              {row.original.ward_type ?? "General"}
+            </div>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "ward_type",
+        header: "Type",
+        cell: ({ row }) => row.original.ward_type ?? "General",
+      },
       { accessorKey: "floor", header: "Floor" },
       {
-        accessorKey: "is_active",
-        header: "Active",
-        cell: ({ row }) => (row.original.is_active ? "Yes" : "No"),
+        accessorKey: "active",
+        header: "Status",
+        cell: ({ row }) => {
+          const active = row.original.active ?? row.original.is_active ?? false;
+          return (
+            <StatusBadge
+              label={active ? "Active" : "Inactive"}
+              variant={active ? "success" : "muted"}
+            />
+          );
+        },
       },
       {
         id: "actions",
@@ -138,8 +162,8 @@ export function WardsTab({ search, onSearchChange }: WardsTabProps) {
           if (!open) setSelectedWard(null);
         }}
         title={selectedWard ? "Edit Ward" : "Add Ward"}
-        description="Create or update ward master data."
-        size="md"
+        description="Configure ward master data for admissions, bed allocation, and inpatient workflows."
+        size="lg"
       >
         <WardForm
           defaultValues={selectedWard ? wardToFormValues(selectedWard) : undefined}

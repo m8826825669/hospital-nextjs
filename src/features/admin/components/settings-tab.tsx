@@ -11,6 +11,7 @@ import {
   useUpdateHospitalSettings,
 } from "../api/admin.queries";
 import { HospitalSettingsForm } from "./hospital-settings-form";
+import { DemoDataSeeder } from "./demo-data-seeder";
 import type { HospitalSettingFormValues } from "../schemas/admin.schema";
 
 function valueOrFallback(value: string | null | undefined, fallback: string) {
@@ -46,6 +47,8 @@ export function SettingsTab() {
 
   return (
     <div className="space-y-4">
+      <DemoDataSeeder />
+
       <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="grid gap-0 lg:grid-cols-[1fr_260px]">
           <div className="grid gap-5 p-5 sm:grid-cols-2 xl:grid-cols-5">
