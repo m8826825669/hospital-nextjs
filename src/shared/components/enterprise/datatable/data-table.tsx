@@ -168,15 +168,15 @@ export function DataTable<TData, TValue>({
       )}
 
       {selectedCount > 0 && (
-        <div className="rounded-lg border bg-muted/50 px-4 py-2 text-sm text-muted-foreground">
+        <div className="rounded-2xl border border-blue-100 bg-blue-50 px-4 py-3 text-sm font-medium text-blue-700">
           {selectedCount} row(s) selected.
         </div>
       )}
 
-      <div className="overflow-hidden rounded-xl border bg-card">
+      <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="max-h-[650px] overflow-auto">
           <Table>
-            <TableHeader className="sticky top-0 z-10 bg-muted">
+            <TableHeader className="sticky top-0 z-10 bg-slate-50/95 backdrop-blur">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {enableRowSelection && (
@@ -222,6 +222,7 @@ export function DataTable<TData, TValue>({
                   <TableRow
                     key={row.id}
                     data-state={row.getIsSelected() && "selected"}
+                    className="transition-colors hover:bg-slate-50/80"
                   >
                     {enableRowSelection && (
                       <TableCell>
@@ -266,7 +267,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {pagination && (
-        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 shadow-sm md:flex-row md:items-center md:justify-between">
           <p className="text-sm text-muted-foreground">
             {pagination.total !== undefined
               ? `${pagination.total} total records`

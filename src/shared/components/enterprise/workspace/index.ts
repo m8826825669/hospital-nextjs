@@ -7,3 +7,4 @@ export * from "./entity-info-grid";
 export * from "./entity-workspace-tabs";
 export * from "./entity-activity-list";
 export * from "./entity-document-list";
+export * from "./entity-workspace-section";

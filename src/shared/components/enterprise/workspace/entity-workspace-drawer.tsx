@@ -4,6 +4,7 @@
 
 import { ReactNode } from "react";
 import { EntityDrawer } from "../entity-drawer";
+import { cn } from "@/shared/lib/utils";
 
 interface EntityWorkspaceDrawerProps {
   open: boolean;
@@ -11,6 +12,8 @@ interface EntityWorkspaceDrawerProps {
   description?: string;
   children: ReactNode;
   onOpenChange: (open: boolean) => void;
+  size?: "xl" | "2xl" | "4xl" | "6xl" | "wide";
+  className?: string;
 }
 
 export function EntityWorkspaceDrawer({
@@ -19,16 +22,18 @@ export function EntityWorkspaceDrawer({
   description,
   children,
   onOpenChange,
+  size = "xl",
+  className,
 }: EntityWorkspaceDrawerProps) {
   return (
     <EntityDrawer
       open={open}
       title={title}
       description={description}
-      size="xl"
+      size={size}
       onOpenChange={onOpenChange}
     >
-      <div className="space-y-6">{children}</div>
+      <div className={cn("space-y-5 pb-6", className)}>{children}</div>
     </EntityDrawer>
   );
 }
