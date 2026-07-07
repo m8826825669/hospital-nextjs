@@ -2,13 +2,19 @@
 
 "use client";
 
+import { BriefcaseBusiness, IdCard, Mail } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { Form } from "@/components/ui/form";
 import {
   CheckboxField,
-  FormActions,
+  EnterpriseFormActions,
+  EnterpriseFormGrid,
+  EnterpriseFormHero,
+  EnterpriseFormNotice,
+  EnterpriseFormSection,
+  EnterpriseReadonlyField,
   SelectField,
   TextareaField,
   TextField,
@@ -70,102 +76,108 @@ export function EmployeeForm({
         onSubmit={form.handleSubmit((values) =>
           onSubmit(employeeFormSchema.parse(values))
         )}
-        className="flex h-full flex-col"
+        className="flex min-h-[calc(100vh-10rem)] flex-col"
       >
-        <div className="flex-1 space-y-6 overflow-y-auto px-1 pb-6">
-          <div className="rounded-xl border bg-card p-5 shadow-sm">
-            <div className="mb-4">
-              <h3 className="text-sm font-semibold">Employee Identity</h3>
-              <p className="text-xs text-muted-foreground">
-                Employee code is generated automatically by the backend after saving.
-              </p>
-            </div>
+        <div className="space-y-5 pb-8">
+          <EnterpriseFormHero
+            eyebrow="HR Master Data"
+            title="Configure Employee"
+            description="Create and maintain the employee profile used by HR, scheduling, clinical assignments, approvals, and access workflows."
+            icon={IdCard}
+          />
 
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="rounded-lg border bg-muted/30 px-3 py-2">
-                <div className="text-xs font-medium text-muted-foreground">
-                  Employee Code
-                </div>
-                <div className="mt-1 text-sm font-semibold">
-                  {employeeCode || "Auto generated"}
-                </div>
-              </div>
-              <TextField form={form} name="first_name" label="First Name" />
-              <TextField form={form} name="last_name" label="Last Name" />
-            </div>
-          </div>
+          <EnterpriseFormSection
+            step="1"
+            icon={IdCard}
+            title="Employee Identity"
+            description="Employee code is generated automatically by the backend after saving."
+          >
+            <EnterpriseFormGrid columns={3}>
+              <EnterpriseReadonlyField
+                label="Employee Code"
+                value={employeeCode || "Auto generated"}
+                icon={IdCard}
+              />
+              <TextField form={form} name="first_name" label="First Name" disabled={isSubmitting} />
+              <TextField form={form} name="last_name" label="Last Name" disabled={isSubmitting} />
+            </EnterpriseFormGrid>
+          </EnterpriseFormSection>
 
-          <div className="rounded-xl border bg-card p-5 shadow-sm">
-            <div className="mb-4">
-              <h3 className="text-sm font-semibold">Contact Information</h3>
-              <p className="text-xs text-muted-foreground">
-                Store employee contact and communication details.
-              </p>
+          <EnterpriseFormSection
+            step="2"
+            icon={Mail}
+            title="Contact Information"
+            description="Store employee contact and communication details."
+          >
+            <EnterpriseFormGrid columns={2}>
+              <TextField form={form} name="email" label="Email" type="email" disabled={isSubmitting} />
+              <TextField form={form} name="phone" label="Phone" disabled={isSubmitting} />
+            </EnterpriseFormGrid>
+            <div className="mt-5">
+              <TextareaField form={form} name="address" label="Address" disabled={isSubmitting} />
             </div>
+          </EnterpriseFormSection>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <TextField form={form} name="email" label="Email" />
-              <TextField form={form} name="phone" label="Phone" />
-            </div>
-
-            <div className="mt-4">
-              <TextareaField form={form} name="address" label="Address" />
-            </div>
-          </div>
-
-          <div className="rounded-xl border bg-card p-5 shadow-sm">
-            <div className="mb-4">
-              <h3 className="text-sm font-semibold">Employment Information</h3>
-              <p className="text-xs text-muted-foreground">
-                Assign department, designation, employment type, and joining date.
-              </p>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-2">
+          <EnterpriseFormSection
+            step="3"
+            icon={BriefcaseBusiness}
+            title="Employment Information"
+            description="Assign department, designation, employment type, joining date, and HR status."
+          >
+            <EnterpriseFormGrid columns={2}>
               <SelectField
                 form={form}
                 name="department_id"
                 label="Department"
                 placeholder="Select department"
                 options={departmentOptions}
+                disabled={isSubmitting}
               />
-              <TextField form={form} name="designation" label="Designation" />
+              <TextField form={form} name="designation" label="Designation" disabled={isSubmitting} />
               <SelectField
                 form={form}
                 name="employment_type"
                 label="Employment Type"
                 options={employmentTypeOptions}
+                disabled={isSubmitting}
               />
               <TextField
                 form={form}
                 name="joining_date"
                 label="Joining Date"
                 type="date"
+                disabled={isSubmitting}
               />
               <SelectField
                 form={form}
                 name="status"
                 label="Status"
                 options={employeeStatusOptions}
+                disabled={isSubmitting}
               />
-              <div className="flex items-end pb-2">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                 <CheckboxField
                   form={form}
                   name="is_active"
-                  label="Employee is active"
+                  label="Employee is active and available for hospital workflows"
+                  disabled={isSubmitting}
                 />
               </div>
-            </div>
-          </div>
+            </EnterpriseFormGrid>
+          </EnterpriseFormSection>
+
+          <EnterpriseFormNotice tone="warning">
+            Before deactivating an employee, verify open schedules, clinical assignments,
+            user access, payroll, and pending approvals.
+          </EnterpriseFormNotice>
         </div>
 
-        <div className="sticky bottom-0 -mx-6 flex items-center justify-end gap-3 border-t bg-background px-6 py-4">
-          <FormActions
-            submitText="Save Employee"
-            isSubmitting={isSubmitting}
-            onCancel={onCancel}
-          />
-        </div>
+        <EnterpriseFormActions
+          submitText="Save Employee"
+          isSubmitting={isSubmitting}
+          onCancel={onCancel}
+          hint="Changes will update employee master data immediately after save."
+        />
       </form>
     </Form>
   );
